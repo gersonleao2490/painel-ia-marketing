@@ -1,0 +1,8 @@
+# Nada de segredos ou lixo no repositório
+*.env
+.env
+backup-painel-ia.json
+*.log
+.DS_Store
+Thumbs.db
+node_modules/

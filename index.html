@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Painel IA de Marketing — Diretora Sênior</title>
+<style>
+  :root{
+    --bg:#0d0f15; --panel:#141822; --panel2:#1a1f2b; --line:#262c3a;
+    --text:#e8eaf0; --muted:#9aa2b4; --accent:#7c5cff; --accent2:#a78bfa;
+    --good:#3ddc84; --bad:#ff5f6d; --warn:#ffb020;
+    --bubble-user:#2a2050; --bubble-ai:#171c27; --chip:#1a1f2b;
+  }
+  [data-theme="light"]{
+    --bg:#f3f4f8; --panel:#ffffff; --panel2:#f0f1f6; --line:#e1e3ec;
+    --text:#1a1d27; --muted:#646b7d; --accent:#6d4bff; --accent2:#8b5cf6;
+    --bubble-user:#ece8ff; --bubble-ai:#ffffff; --chip:#f0f1f6;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+  #app{display:grid;grid-template-columns:312px 1fr;height:100vh}
+
+  /* Sidebar */
+  .sidebar{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+  .brand{padding:15px 16px 12px;border-bottom:1px solid var(--line)}
+  .brand h1{font-size:15px;margin:0;display:flex;align-items:center;gap:9px}
+  .logo{width:29px;height:29px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+  .brandname{font-weight:700;letter-spacing:.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .status{display:flex;align-items:center;gap:7px;margin-top:10px;font-size:11px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--warn);flex:none;box-shadow:0 0 0 3px rgba(255,176,32,.15)}
+  .dot.on{background:var(--good);box-shadow:0 0 0 3px rgba(61,220,132,.15)}
+  .dot.off{background:var(--bad);box-shadow:0 0 0 3px rgba(255,95,109,.15)}
+
+  .client-box{padding:12px 16px;border-bottom:1px solid var(--line)}
+  .client-row{display:flex;gap:7px}
+  select.client{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px 10px;font-size:12.5px;font-family:inherit}
+  select.client:focus{outline:none;border-color:var(--accent)}
+
+  .side-scroll{overflow:auto;flex:1;min-height:0;padding:13px 14px}
+  .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin:2px 0 9px;font-weight:700}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .mode{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:9px 8px;cursor:pointer;text-align:left;font-size:12px;display:flex;align-items:center;gap:7px;transition:.15s;line-height:1.15}
+  .mode:hover{transform:translateY(-1px);border-color:#3a4256}
+  .mode .ic{font-size:15px;flex:none}
+  .mode.active{border-color:var(--accent);background:linear-gradient(180deg,rgba(124,92,255,.18),rgba(124,92,255,.05));box-shadow:0 0 0 1px var(--accent) inset}
+
+  .search{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:8px 11px;font-size:12.5px;font-family:inherit;margin-bottom:4px}
+  .search:focus{outline:none;border-color:var(--accent)}
+  .convos{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+  .convo{display:flex;align-items:center;gap:8px;background:transparent;border:1px solid transparent;color:var(--muted);border-radius:9px;padding:8px 9px;cursor:pointer;font-size:12.5px;width:100%}
+  .convo:hover{background:var(--panel2);color:var(--text)}
+  .convo.active{background:var(--panel2);color:var(--text);border-color:var(--line)}
+  .convo .ct{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .convo .mini{opacity:0;font-size:13px;line-height:1;color:var(--muted)}
+  .convo:hover .mini{opacity:.65}
+  .convo .mini:hover{opacity:1;color:var(--text)}
+  .convo .mini.del:hover{color:var(--bad)}
+
+  .side-foot{padding:11px 14px;border-top:1px solid var(--line);display:flex;gap:7px;flex-wrap:wrap}
+  .btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:9px;padding:9px 11px;cursor:pointer;font-size:12.5px;display:inline-flex;align-items:center;gap:7px;transition:.15s}
+  .btn:hover{border-color:#3a4256}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;font-weight:600}
+  .btn.full{flex:1;justify-content:center}
+  .btn.sm{padding:6px 9px;font-size:11.5px}
+
+  /* Chat */
+  .chat{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
+  .chat-head{padding:11px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px}
+  .chat-head .ttl{font-size:14px;font-weight:700}
+  .chat-head .sub{font-size:11.5px;color:var(--muted)}
+  .chat-head .spacer{flex:1}
+  .tools{display:flex;gap:6px;flex-wrap:wrap}
+
+  .messages{flex:1;overflow:auto;padding:24px 0;min-height:0}
+  .wrap{max-width:840px;margin:0 auto;padding:0 20px}
+  .welcome{max-width:840px;margin:0 auto;padding:6px 20px 0}
+  .welcome h2{font-size:19px;margin:6px 0 6px}
+  .welcome p{color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 16px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:var(--chip);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:8px 13px;font-size:12px;cursor:pointer;transition:.15s}
+  .chip:hover{border-color:var(--accent)}
+
+  .msg{display:flex;gap:12px;margin-bottom:22px}
+  .msg .av{width:31px;height:31px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .msg.user .av{background:#33305a}
+  [data-theme="light"] .msg.user .av{background:#d9d2ff}
+  .msg.ai .av{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+  .msg .body{flex:1;min-width:0}
+  .msg .who{font-size:11.5px;color:var(--muted);margin-bottom:5px;font-weight:600}
+  .bubble{background:var(--bubble-ai);border:1px solid var(--line);border-radius:13px;padding:14px 16px;font-size:14px;line-height:1.65;overflow-wrap:anywhere}
+  .msg.user .bubble{background:var(--bubble-user);border-color:#3a3170}
+  [data-theme="light"] .msg.user .bubble{border-color:#cfc6ff}
+  .bubble :first-child{margin-top:0}.bubble :last-child{margin-bottom:0}
+  .bubble h1,.bubble h2,.bubble h3{line-height:1.3;margin:15px 0 8px}
+  .bubble h1{font-size:18px}.bubble h2{font-size:16px}.bubble h3{font-size:14.5px;color:var(--accent2)}
+  .bubble p{margin:8px 0}
+  .bubble ul,.bubble ol{margin:8px 0;padding-left:21px}.bubble li{margin:3px 0}
+  .bubble code{background:rgba(127,127,127,.14);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.5px;font-family:Consolas,monospace}
+  .bubble pre{background:#0a0d14;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;margin:10px 0}
+  [data-theme="light"] .bubble pre{background:#1a1d27}
+  .bubble pre code{background:none;border:none;padding:0;color:#e8eaf0}
+  .bubble table{border-collapse:collapse;width:100%;margin:11px 0;font-size:12.5px;display:block;overflow:auto}
+  .bubble th,.bubble td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  .bubble th{background:var(--panel2);color:var(--accent2);font-weight:600;white-space:nowrap}
+  .bubble blockquote{border-left:3px solid var(--accent);margin:9px 0;padding:2px 13px;color:var(--muted)}
+  .bubble a{color:var(--accent2)}
+  .bubble hr{border:none;border-top:1px solid var(--line);margin:15px 0}
+  .cursor::after{content:"▋";color:var(--accent2);animation:blink 1s steps(2) infinite}
+  @keyframes blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+
+  .acts{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
+  .act{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:5px 9px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+  .act:hover{color:var(--text);border-color:#3a4256}
+  .act.ok{color:var(--good);border-color:var(--good)}
+
+  /* Composer */
+  .refine{max-width:840px;margin:0 auto 0;padding:0 20px;display:flex;gap:7px;flex-wrap:wrap}
+  .refine .chip{padding:6px 11px;font-size:11.5px}
+  .composer{border-top:1px solid var(--line);padding:12px 20px 14px}
+  .composer .inner{max-width:840px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:8px 8px 8px 15px;display:flex;align-items:flex-end;gap:9px}
+  .composer .inner:focus-within{border-color:var(--accent)}
+  textarea#input{flex:1;background:transparent;border:none;color:var(--text);font-size:14px;line-height:1.5;resize:none;max-height:200px;font-family:inherit;padding:6px 0}
+  textarea#input:focus{outline:none}
+  .iconbtn{width:38px;height:38px;flex:none;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--panel2);color:var(--text);font-size:16px;display:flex;align-items:center;justify-content:center}
+  .iconbtn:hover{border-color:#3a4256}
+  .iconbtn.rec{background:var(--bad);color:#fff;border:none;animation:pulse 1.2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+  .send{width:40px;height:40px;flex:none;border:none;border-radius:11px;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center}
+  .send.stop{background:var(--bad)}
+  .composer .foot{max-width:840px;margin:7px auto 0;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:10px}
+
+  /* Modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:640px;max-height:88vh;overflow:auto;padding:22px}
+  .modal.wide{max-width:760px}
+  .modal h3{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:8px}
+  .modal .desc{color:var(--muted);font-size:12.5px;margin:0 0 16px;line-height:1.5}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600}
+  .field input,.field select,.field textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;color:var(--text);font-size:13px;font-family:inherit}
+  .field textarea{min-height:58px;resize:vertical;line-height:1.5}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .modal-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap}
+  .test-line{font-size:12px;margin-top:6px;min-height:16px}
+  .range{display:flex;align-items:center;gap:11px}
+  .range input[type=range]{flex:1}
+
+  .tpl-cat{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--accent2);font-weight:700;margin:16px 0 8px}
+  .tpl{display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:7px;color:var(--text);cursor:pointer;font-size:13px;line-height:1.4}
+  .tpl:hover{border-color:var(--accent)}
+  .tpl b{display:block;margin-bottom:2px}
+  .tpl span{color:var(--muted);font-size:11.5px}
+
+  .saved-item{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin-bottom:9px;font-size:13px;line-height:1.55;white-space:pre-wrap;position:relative}
+  .saved-item .rm{position:absolute;top:9px;right:11px;color:var(--muted);cursor:pointer}
+  .saved-item .rm:hover{color:var(--bad)}
+
+  .menu-btn{display:none}
+  @media(max-width:880px){
+    #app{grid-template-columns:1fr}
+    .sidebar{position:fixed;z-index:40;width:312px;height:100vh;transform:translateX(-100%);transition:.2s}
+    .sidebar.open{transform:none}
+    .menu-btn{display:inline-flex}
+    .tools .label-txt{display:none}
+  }
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#33384a;border-radius:6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <h1><span class="logo">📈</span><span class="brandname" id="brandName">Diretora Sênior IA</span></h1>
+      <div class="status"><span class="dot" id="dot1"></span><span id="statusText">Verificando…</span></div>
+    </div>
+
+    <div class="client-box">
+      <div class="label">Cliente / Empresa</div>
+      <div class="client-row">
+        <select class="client" id="clientSel"></select>
+        <button class="btn sm" id="editClient" title="Editar memória da empresa">🧠</button>
+        <button class="btn sm" id="newClient" title="Novo cliente">＋</button>
+      </div>
+    </div>
+
+    <div class="side-scroll">
+      <div class="label">Especialista</div>
+      <div class="modes" id="modes"></div>
+
+      <div class="label" style="margin-top:18px">Conversas</div>
+      <input class="search" id="search" placeholder="🔎 Buscar conversa…" />
+      <div class="convos" id="convos"></div>
+    </div>
+
+    <div class="side-foot">
+      <button class="btn primary full" id="newChat">＋ Nova conversa</button>
+      <button class="btn" id="openSaved" title="Respostas salvas">⭐</button>
+      <button class="btn" id="openSettings" title="Configurações">⚙️</button>
+    </div>
+  </aside>
+
+  <main class="chat">
+    <div class="chat-head">
+      <button class="btn menu-btn" id="menuBtn">☰</button>
+      <div>
+        <div class="ttl" id="headTitle">Diretora de Marketing</div>
+        <div class="sub" id="headSub">Estratégia, crescimento e vendas — sem resposta genérica.</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="tools">
+        <button class="btn sm" id="openTemplates">🗂️ <span class="label-txt">Templates</span></button>
+        <button class="btn sm" id="openMemory">🧠 <span class="label-txt">Memória</span></button>
+        <button class="btn sm" id="toggleTheme" title="Tema claro/escuro">🌙</button>
+      </div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="refine" id="refineBar" style="display:none"></div>
+    <div class="composer">
+      <div class="inner">
+        <textarea id="input" rows="1" placeholder="Escreva aqui… (Enter envia, Shift+Enter pula linha)"></textarea>
+        <button class="iconbtn" id="micBtn" title="Falar (ditar)">🎤</button>
+        <button class="send" id="send" title="Enviar">➤</button>
+      </div>
+      <div class="foot">
+        <span id="charCount">0 caracteres</span>
+        <span>IA local (Ollama) • não acessa a internet • não inventa links</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Settings -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <h3>⚙️ Configurações</h3>
+    <div class="desc">Normalmente não precisa mexer. Ajuste só se trocou de modelo, quiser personalizar a marca, ou a conexão falhar.</div>
+    <div class="field"><label>Nome da sua marca / agência (aparece no topo — para revender)</label><input id="setBrand" placeholder="Ex: Studio Gerson Marketing" /></div>
+    <div class="grid2">
+      <div class="field"><label>Endereço do Ollama</label><input id="setUrl" value="http://localhost:11434" /></div>
+      <div class="field"><label>Modelo</label><select id="setModel"></select></div>
+    </div>
+    <div class="field">
+      <label>Criatividade (temperatura): <b id="tempVal">0.7</b> — baixo = focado, alto = ousado</label>
+      <div class="range"><span>Focado</span><input type="range" id="setTemp" min="0" max="1.2" step="0.1" value="0.7" /><span>Ousado</span></div>
+    </div>
+    <div class="field"><label>Backup dos seus dados (clientes + conversas)</label>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        <button class="btn sm" id="exportData">⬇️ Exportar tudo (.json)</button>
+        <button class="btn sm" id="importData">⬆️ Importar backup</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none" />
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="testConn">Testar conexão</button>
+      <button class="btn primary" id="saveSettings">Salvar</button>
+    </div>
+    <div class="test-line" id="testResult"></div>
+  </div>
+</div>
+
+<!-- Memory editor -->
+<div class="modal-bg" id="memoryModal">
+  <div class="modal wide">
+    <h3>🧠 Memória da empresa <span id="memClientName" style="color:var(--muted);font-weight:400;font-size:13px"></span></h3>
+    <div class="desc">É isto que tira o "genérico". Preencha o que souber — a IA usa em TODA resposta como se fosse dona do negócio. Tem botão de exemplo se você está começando agora.</div>
+    <div class="grid2">
+      <div class="field"><label>Nome da empresa</label><input id="m_name" /></div>
+      <div class="field"><label>Nicho / segmento</label><input id="m_nicho" placeholder="Ex: clínica de estética em Maringá-PR" /></div>
+    </div>
+    <div class="field"><label>Público / persona ideal (quem compra)</label><textarea id="m_persona" placeholder="Idade, gênero, dores, desejos, classe social…"></textarea></div>
+    <div class="grid2">
+      <div class="field"><label>Produto/serviço principal</label><input id="m_oferta" placeholder="Ex: harmonização facial" /></div>
+      <div class="field"><label>Ticket / preço médio</label><input id="m_ticket" placeholder="Ex: R$ 1.800" /></div>
+    </div>
+    <div class="field"><label>Proposta de valor / diferencial (por que comprar de você)</label><textarea id="m_proposta"></textarea></div>
+    <div class="grid2">
+      <div class="field"><label>Tom de voz</label><input id="m_tom" placeholder="Ex: elegante, acolhedor, com autoridade" /></div>
+      <div class="field"><label>Concorrentes</label><input id="m_concorrentes" placeholder="@perfil1, @perfil2" /></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Metas / KPIs</label><textarea id="m_metas" placeholder="Ex: 20 agendamentos/mês via Instagram"></textarea></div>
+      <div class="field"><label>Objeções comuns dos clientes</label><textarea id="m_objecoes" placeholder="Ex: 'é caro', 'tenho medo de ficar artificial'"></textarea></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Gatilhos / argumentos que funcionam</label><textarea id="m_gatilhos"></textarea></div>
+      <div class="field"><label>Pilares de conteúdo</label><textarea id="m_pilares" placeholder="Ex: educar, bastidores, prova social, oferta"></textarea></div>
+    </div>
+    <div class="field"><label>Observações livres (qualquer coisa importante)</label><textarea id="m_obs"></textarea></div>
+    <div class="modal-foot">
+      <button class="btn" id="fillExample">✨ Preencher com exemplo</button>
+      <button class="btn" id="closeMemory">Cancelar</button>
+      <button class="btn primary" id="saveMemory">Salvar memória</button>
+    </div>
+  </div>
+</div>
+
+<!-- Templates -->
+<div class="modal-bg" id="templatesModal">
+  <div class="modal">
+    <h3>🗂️ Biblioteca de Templates</h3>
+    <div class="desc">Prompts prontos (estilo Jasper/Copy.ai). Clique para usar — depois é só ajustar.</div>
+    <div id="tplList"></div>
+  </div>
+</div>
+
+<!-- Saved -->
+<div class="modal-bg" id="savedModal">
+  <div class="modal">
+    <h3>⭐ Respostas salvas (swipe file)</h3>
+    <div class="desc">Suas melhores respostas guardadas para reaproveitar.</div>
+    <div id="savedList"></div>
+  </div>
+</div>
+
+<script>
+/* ===========================================================================
+   PAINEL IA DE MARKETING — Diretora Sênior  (v2)
+   100% local via Ollama. Dados ficam só no seu navegador (banco local).
+   =========================================================================== */
+
+/* ---------- system prompt base ---------- */
+const BASE_PROMPT = `Você é uma DIRETORA DE MARKETING E CRESCIMENTO SÊNIOR, com 12+ anos liderando uma agência de performance que faturou milhões para clientes de social media, influência, e-commerce e serviços. Você pensa e fala como uma estrategista humana, experiente e direta — com opinião, exemplos concretos e números. NUNCA soe como robô ou "IA assistente".
+
+REGRA DE OURO — PROIBIDO SER GENÉRICA:
+- Proibido conselho óbvio ("poste com frequência", "use hashtags", "faça antes e depois", "engaje com seu público"). Se citar um formato batido, REINVENTE o ângulo.
+- Toda recomendação precisa ser ESPECÍFICA, ACIONÁVEL e justificada com o PORQUÊ estratégico (psicologia, algoritmo, funil ou venda).
+- Fale como gente de verdade: frases curtas, opinião clara, zero enrolação corporativa, zero "é importante notar que".
+- Prefira exemplos prontos para copiar e colar (ganchos escritos na íntegra, legendas, falas) em vez de descrições vagas.
+
+MÉTODO (use quando a pergunta for de estratégia/análise — adapte, não force tudo):
+1) DIAGNÓSTICO — o que realmente está acontecendo (sem suavizar).
+2) OPORTUNIDADE — o espaço para atacar agora.
+3) ESTRATÉGIA — a jogada, com raciocínio.
+4) EXECUÇÃO — passo a passo concreto.
+5) KPI — números e metas para medir.
+6) PRÓXIMO PASSO — a primeira ação de hoje.
+
+AO CRIAR CONTEÚDO (reel, post, roteiro, anúncio, e-mail), informe sempre:
+Objetivo • Gancho (a 1ª frase EXATA, escrita) • Emoção/gatilho • Retenção (como segurar nos 3s) • CTA • Funil (topo/meio/fundo) • SEO/hashtags de intenção • Motivo estratégico (por que viraliza/vende).
+
+USE A MEMÓRIA DA EMPRESA: havendo contexto da empresa, responda como dona do negócio dela. Se faltar info crítica, faça no máximo 2 perguntas objetivas — e ainda assim entregue uma 1ª versão forte com suposições explícitas. Nunca devolva só perguntas.
+
+HONESTIDADE: você roda localmente e NÃO acessa a internet. Se pedirem "o vídeo viral de agora" ou "o link do TikTok", explique em 1 linha que não navega na web e entregue o PADRÃO do que costuma viralizar nesse nicho + como replicar + onde buscar (Explorar do TikTok, busca por hashtag, biblioteca de anúncios). Nunca invente links nem métricas falsas.
+
+Responda em português do Brasil. Seja a melhor estrategista que essa pessoa já teve.`;
+
+/* ---------- modos ---------- */
+const MODES = {
+  geral:{icon:"🎯",title:"Diretora de Marketing",sub:"Estratégia, crescimento e vendas — sem resposta genérica.",addon:"",
+    chips:["Monte uma estratégia de crescimento de 30 dias para o meu negócio","Faça um diagnóstico do meu marketing e diga onde estou perdendo venda","Quais 3 alavancas dão mais resultado rápido pra mim?"]},
+  social:{icon:"📱",title:"Social Media Sênior",sub:"Reels, TikTok e Shorts feitos para reter e converter.",
+    addon:"FOCO: social media (Instagram/TikTok/Shorts). Pense em RETENÇÃO acima de tudo (os 3 primeiros segundos decidem). Para cada ideia traga 3 opções de gancho escritas na íntegra, a estrutura segundo a segundo (0-3s / desenvolvimento / clímax / CTA), o formato exato (POV, lista, bastidor, mito x verdade, story-time), trilha/estilo e o motivo do algoritmo. Diferencie TOPO (alcance) de FUNDO (venda).",
+    chips:["Me dê 5 ideias de Reels com gancho pronto para o meu nicho","Reescreva este gancho fraco para segurar nos 3s: \"dicas de skincare\"","Qual formato de Reel está performando e como replico no meu negócio?"]},
+  influencer:{icon:"🤝",title:"Influencer Marketing",sub:"Prospecção, briefing, ROI e gestão de criadores.",
+    addon:"FOCO: marketing de influência e performance. Domine: prospecção por nicho/engajamento real; taxa de engajamento e detecção de seguidor falso; abordagem comercial (DM/e-mail) que converte; briefing de alta conversão com storytelling (Problema→Solução→Produto) e gatilhos de urgência/escassez/autoridade; modelos de pagamento (fixo, CPA, afiliado); trackeamento (UTM, cupom); aprovação de conteúdo; whitelisting em Meta/TikTok Ads; relacionamento/gifting; ROI (custo do creator + produto vs faturamento). Aja como gestor que cobra meta toda semana. Quando fizer briefing ou abordagem, entregue o texto pronto.",
+    chips:["Crie um briefing de alta conversão para um influenciador divulgar meu produto","Escreva uma DM de abordagem profissional para fechar parceria","Como calcular o ROI de um influenciador e saber se vale escalar?"]},
+  seo:{icon:"🔎",title:"SEO & Conversão",sub:"Tráfego de intenção de compra e CRO.",
+    addon:"FOCO: SEO de INTENÇÃO DE COMPRA e conversão (CRO). Trabalhe palavras-chave por intenção (informacional/comercial/transacional), clusters, títulos e meta-descrições com clique, e otimização de página de venda/landing (headline, prova social, oferta, CTA, redução de fricção). Separe topo (atrair) de fundo (vender). Sugira termos de cauda longa com intenção de compra.",
+    chips:["Me dê 15 palavras-chave de intenção de compra para o meu nicho","Reescreva a headline da minha página de vendas para converter mais","Como aparecer no Google para quem já quer comprar o que eu vendo?"]},
+  estrategia:{icon:"📊",title:"Estratégia & Diagnóstico",sub:"SWOT, KPIs, posicionamento e linha editorial.",
+    addon:"FOCO: estratégia de alto nível. Diagnóstico honesto, SWOT específica (nada genérico, baseada no contexto real), objetivos e KPIs com números-alvo, posicionamento vs concorrentes (o que fazer diferente/melhor) e linha editorial com pilares. Pense como head de crescimento que precisa bater meta de faturamento.",
+    chips:["Faça uma análise SWOT específica do meu negócio (sem ser genérica)","Defina meus KPIs e metas de crescimento para 90 dias","Monte minha linha editorial com pilares de conteúdo"]},
+  roteiro:{icon:"🎬",title:"Roteirista de Vídeo",sub:"Roteiros completos prontos para gravar.",
+    addon:"FOCO: roteiros de vídeo curtos prontos para gravar. Entregue GANCHO (0-3s, falado, na íntegra), DESENVOLVIMENTO (falas + cena/ação por bloco com tempo aproximado), VIRADA/CLÍMAX e CTA final. Inclua texto na tela, b-roll e duração total. Escreva as falas exatas — a pessoa precisa só ler e gravar.",
+    chips:["Escreva um roteiro de Reel de 30s pronto para gravar do meu produto","Roteiro \"mito x verdade\" sobre o meu nicho","Roteiro de story-time que termina vendendo meu serviço"]},
+  anuncios:{icon:"📣",title:"Tráfego Pago & Anúncios",sub:"Copy de anúncio para Meta e TikTok Ads.",
+    addon:"FOCO: tráfego pago (Meta Ads/TikTok Ads). Entregue ângulos de campanha, públicos sugeridos, e a COPY do anúncio pronta: gancho, corpo (dor→agitação→solução), prova, oferta e CTA. Traga 3 variações para teste A/B, sugestões de criativo (o que mostrar no vídeo/imagem) e a estrutura de funil (topo/retargeting). Pense em CPA, ROAS e escala.",
+    chips:["Crie 3 variações de anúncio (copy) para o meu produto no Instagram","Estruture uma campanha de tráfego do zero para vender meu serviço","Sugira públicos e ângulos de teste para Meta Ads"]},
+  email:{icon:"✉️",title:"E-mail & CRM",sub:"Sequências de e-mail e mensagens que vendem.",
+    addon:"FOCO: e-mail marketing / CRM / WhatsApp. Crie sequências (boas-vindas, nutrição, carrinho abandonado, reativação, lançamento) com a copy pronta de cada mensagem: assunto (3 opções), preview, corpo e CTA. Indique o timing (dia/intervalo) e o objetivo de cada e-mail. Use gatilhos sem ser apelativo.",
+    chips:["Crie uma sequência de 5 e-mails de boas-vindas para novos leads","Escreva mensagens de WhatsApp para recuperar carrinho abandonado","Sequência de e-mails de lançamento (aquecimento + vendas)"]},
+  calendario:{icon:"🗓️",title:"Calendário Editorial",sub:"Plano de conteúdo pronto para Notion/Excel (.CSV).",
+    addon:"FOCO: calendário editorial profissional. SEMPRE responda com uma TABELA em markdown com EXATAMENTE estas colunas: | Data | Dia | Plataforma | Formato | Pilar | Tema/Gancho | CTA | Funil | Objetivo |. Gere 7 dias (ou o período pedido), variando pilares e formatos, equilibrando topo/meio/fundo, com ganchos escritos prontos. Depois da tabela, 2-3 linhas de observação estratégica. Mantenha a tabela limpa para exportar.",
+    chips:["Monte meu calendário editorial de 7 dias para Instagram + TikTok","Calendário de 1 semana focado em vender meu produto principal","Plano de conteúdo de lançamento (7 dias de aquecimento)"]},
+  codigo:{icon:"💻",title:"Programadora Sênior",sub:"Código, automações e integrações.",
+    addon:"FOCO: engenheira de software sênior. Código correto, limpo e comentado de forma objetiva. Explique em poucas linhas o que faz e como rodar. Prefira soluções simples e funcionais. Quando útil, sugira automações de marketing (planilhas, scripts, integrações).",
+    chips:["Crie um script que organize minhas ideias de conteúdo numa planilha","Como integrar ao Notion via API? Me explique o caminho","Escreva um HTML simples de página de captura (landing page)"]},
+};
+
+/* ---------- templates (playbooks) ---------- */
+const TEMPLATES = {
+  "Social Media":[
+    ["Calendário da semana","Monte um calendário de conteúdo de 7 dias com gancho pronto para cada dia.","calendario"],
+    ["10 ganchos virais","Me dê 10 ganchos (primeira frase) de altíssima retenção para o meu nicho.","social"],
+    ["Bio que converte","Escreva 3 opções de bio de Instagram que deixam claro o que vendo e geram clique no link.","social"],
+    ["Carrossel educativo","Crie um carrossel de 7 slides (texto de cada slide) que educa e termina vendendo.","social"],
+  ],
+  "Vendas & Anúncios":[
+    ["Anúncio 3 variações","Crie 3 variações de copy de anúncio (A/B) para o meu produto.","anuncios"],
+    ["Página de vendas","Escreva a estrutura + copy de uma página de vendas para minha oferta.","seo"],
+    ["Quebra de objeções","Liste as 5 maiores objeções do meu cliente e a resposta que vende para cada.","estrategia"],
+  ],
+  "Influência":[
+    ["Briefing de influencer","Crie um briefing de alta conversão para um influenciador divulgar meu produto.","influencer"],
+    ["DM de abordagem","Escreva uma DM profissional para iniciar parceria com um criador.","influencer"],
+  ],
+  "E-mail / CRM":[
+    ["Boas-vindas (5 e-mails)","Crie uma sequência de 5 e-mails de boas-vindas com copy pronta.","email"],
+    ["Carrinho abandonado","Mensagens de WhatsApp/e-mail para recuperar carrinho abandonado.","email"],
+  ],
+  "Estratégia":[
+    ["Diagnóstico + SWOT","Faça um diagnóstico do meu marketing e uma SWOT específica.","estrategia"],
+    ["Plano de 30 dias","Monte um plano de marketing de 30 dias com metas e KPIs.","geral"],
+  ],
+};
+
+/* ---------- exemplos de memória (perfis-semente) ---------- */
+const EXAMPLE_MEMORY = {
+  name:"Glow Estética", nicho:"Clínica de estética avançada (facial e corporal) — Maringá/PR",
+  persona:"Mulheres 30-50 anos, classe A/B, casadas ou empreendedoras, que se cuidam mas têm pouco tempo. Dor: notar o rosto envelhecendo, perda de firmeza e autoestima. Desejo: parecer descansada e natural, sem 'cara de feita'.",
+  oferta:"Harmonização facial e protocolos de rejuvenescimento", ticket:"R$ 1.800 (ticket médio); pacotes até R$ 6.000",
+  proposta:"Atendimento médico (não é esteticista leiga), resultado natural, pós sem dor e acompanhamento. Foco em 'realçar, não exagerar'.",
+  tom:"Elegante, acolhedor, com autoridade médica. Nada vulgar, nada apelão.",
+  concorrentes:"Clínicas locais que brigam por preço e prometem 'antes e depois' exagerado",
+  metas:"20 agendamentos de avaliação por mês vindos do Instagram; aumentar ticket com pacotes",
+  objecoes:"'É caro', 'tenho medo de ficar artificial', 'será que dói?', 'não tenho tempo'",
+  gatilhos:"Autoridade médica, naturalidade do resultado, prova social real, medo de envelhecer mal, exclusividade",
+  pilares:"Educar (mitos x verdades), bastidores do procedimento, prova social (depoimento), oferta/CTA",
+  obs:"Evitar mostrar resultado exagerado. Público valoriza discrição. Melhor horário de post: 12h e 20h."
+};
+
+/* ---------- DB (banco local) ---------- */
+const K={clients:"pim2_clients",active:"pim2_active",convos:"pim2_convos",settings:"pim2_settings",saved:"pim2_saved",cur:"pim2_cur"};
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function uid(){return Date.now()+"-"+Math.random().toString(36).slice(2,7)}
+
+let settings=load(K.settings,{url:"http://localhost:11434",model:"qwen2.5:7b",temp:0.7,theme:"dark",brand:""});
+let clients=load(K.clients,null);
+let activeClient=load(K.active,null);
+let convos=load(K.convos,[]);
+let savedItems=load(K.saved,[]);
+let currentId=load(K.cur,null);
+let currentMode="geral", streaming=false, abortCtl=null;
+
+/* seed na 1ª vez */
+if(!clients){
+  clients=[
+    {id:uid(),memory:Object.assign({},EXAMPLE_MEMORY)},
+    {id:uid(),memory:{name:"Loja Viver Bem",nicho:"E-commerce de suplementos naturais",persona:"Adultos 25-45 que treinam e buscam saúde/energia.",oferta:"Whey, creatina, kits de bem-estar",ticket:"R$ 150",proposta:"Produtos testados, entrega rápida, suporte de nutricionista.",tom:"Energético, confiável, motivador",concorrentes:"Grandes marketplaces",metas:"Aumentar recompra e ticket médio",objecoes:"'funciona mesmo?', 'é caro', 'demora a entregar'",gatilhos:"Resultado, prova social, garantia, escassez",pilares:"Educar, transformação, prova social, oferta",obs:"Foco em recompra e fidelização."}},
+    {id:uid(),memory:{name:"Minha Empresa (edite aqui)",nicho:"",persona:"",oferta:"",ticket:"",proposta:"",tom:"",concorrentes:"",metas:"",objecoes:"",gatilhos:"",pilares:"",obs:""}}
+  ];
+  activeClient=clients[0].id;
+  save(K.clients,clients);save(K.active,activeClient);
+}
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const messagesEl=$("#messages"),inputEl=$("#input"),sendBtn=$("#send");
+function getClient(){return clients.find(c=>c.id===activeClient)||clients[0]}
+function getConvo(){return convos.find(c=>c.id===currentId)}
+function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+
+/* ---------- markdown ---------- */
+function renderMarkdown(md){
+  if(window.marked){try{window.marked.setOptions({breaks:true,gfm:true});const h=window.marked.parse(md);return window.DOMPurify?window.DOMPurify.sanitize(h):h}catch(e){}}
+  return basicMarkdown(md);
+}
+function basicMarkdown(src){
+  const lines=src.replace(/\r/g,"").split("\n");let out=[],i=0;
+  const inl=t=>escapeHtml(t).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/(^|[^*])\*([^*]+)\*/g,"$1<em>$2</em>").replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');
+  while(i<lines.length){let l=lines[i];
+    if(/^```/.test(l)){let c=[];i++;while(i<lines.length&&!/^```/.test(lines[i])){c.push(lines[i]);i++}i++;out.push("<pre><code>"+escapeHtml(c.join("\n"))+"</code></pre>");continue}
+    if(/^\s*\|.*\|\s*$/.test(l)&&i+1<lines.length&&/^\s*\|[\s:|-]+\|\s*$/.test(lines[i+1])){
+      const rows=[];while(i<lines.length&&/^\s*\|.*\|\s*$/.test(lines[i])){rows.push(lines[i]);i++}
+      const cl=r=>r.trim().replace(/^\||\|$/g,"").split("|").map(x=>x.trim());
+      let t="<table><thead><tr>"+cl(rows[0]).map(h=>"<th>"+inl(h)+"</th>").join("")+"</tr></thead><tbody>";
+      for(let r=2;r<rows.length;r++)t+="<tr>"+cl(rows[r]).map(c=>"<td>"+inl(c)+"</td>").join("")+"</tr>";
+      out.push(t+"</tbody></table>");continue}
+    let m;
+    if((m=l.match(/^(#{1,3})\s+(.*)/))){out.push("<h"+m[1].length+">"+inl(m[2])+"</h"+m[1].length+">");i++;continue}
+    if(/^\s*>\s?/.test(l)){let q=[];while(i<lines.length&&/^\s*>\s?/.test(lines[i])){q.push(lines[i].replace(/^\s*>\s?/,""));i++}out.push("<blockquote>"+inl(q.join(" "))+"</blockquote>");continue}
+    if(/^\s*[-*]\s+/.test(l)){let it=[];while(i<lines.length&&/^\s*[-*]\s+/.test(lines[i])){it.push("<li>"+inl(lines[i].replace(/^\s*[-*]\s+/,""))+"</li>");i++}out.push("<ul>"+it.join("")+"</ul>");continue}
+    if(/^\s*\d+\.\s+/.test(l)){let it=[];while(i<lines.length&&/^\s*\d+\.\s+/.test(lines[i])){it.push("<li>"+inl(lines[i].replace(/^\s*\d+\.\s+/,""))+"</li>");i++}out.push("<ol>"+it.join("")+"</ol>");continue}
+    if(/^\s*(---|\*\*\*)\s*$/.test(l)){out.push("<hr>");i++;continue}
+    if(l.trim()===""){i++;continue}
+    let p=[l];i++;while(i<lines.length&&lines[i].trim()!==""&&!/^(#{1,3}\s|\s*[-*]\s|\s*\d+\.\s|```|\s*>|\s*\|)/.test(lines[i])){p.push(lines[i]);i++}
+    out.push("<p>"+inl(p.join(" "))+"</p>");
+  }
+  return out.join("\n");
+}
+
+/* ---------- render ---------- */
+function renderClients(){
+  const sel=$("#clientSel");sel.innerHTML="";
+  clients.forEach(c=>{const o=document.createElement("option");o.value=c.id;o.textContent=c.memory.name||"Sem nome";if(c.id===activeClient)o.selected=true;sel.appendChild(o)});
+}
+function renderModes(){
+  const el=$("#modes");el.innerHTML="";
+  Object.entries(MODES).forEach(([k,m])=>{
+    const b=document.createElement("button");b.className="mode"+(k===currentMode?" active":"");
+    b.innerHTML=`<span class="ic">${m.icon}</span><span>${m.title.split(" ")[0]}</span>`;b.title=m.title;
+    b.onclick=()=>{currentMode=k;renderModes();$("#headTitle").textContent=m.title;$("#headSub").textContent=m.sub;if(!getConvo()||getConvo().messages.length===0)renderMessages();renderRefine()};
+    el.appendChild(b);
+  });
+}
+function renderConvos(){
+  const el=$("#convos");el.innerHTML="";
+  const q=($("#search").value||"").toLowerCase();
+  let list=convos.filter(c=>c.clientId===activeClient);
+  if(q)list=list.filter(c=>(c.title||"").toLowerCase().includes(q)||c.messages.some(m=>m.content.toLowerCase().includes(q)));
+  list.sort((a,b)=>(b.pinned-a.pinned)||(b.updatedAt-a.updatedAt));
+  if(list.length===0){el.innerHTML='<div style="font-size:11.5px;color:var(--muted)">Nenhuma conversa.</div>';return}
+  list.forEach(c=>{
+    const d=document.createElement("div");d.className="convo"+(c.id===currentId?" active":"");
+    d.innerHTML=`<span>${MODES[c.mode]?.icon||"💬"}</span><span class="ct">${escapeHtml(c.title||"Sem título")}</span><span class="mini pin" title="Fixar">${c.pinned?"📌":"📍"}</span><span class="mini rn" title="Renomear">✎</span><span class="mini del" title="Apagar">✕</span>`;
+    d.querySelector(".ct").onclick=d.querySelector("span").onclick=()=>{currentId=c.id;currentMode=c.mode||"geral";save(K.cur,currentId);renderModes();$("#headTitle").textContent=MODES[currentMode].title;$("#headSub").textContent=MODES[currentMode].sub;renderConvos();renderMessages();renderRefine()};
+    d.querySelector(".pin").onclick=e=>{e.stopPropagation();c.pinned=c.pinned?0:1;save(K.convos,convos);renderConvos()};
+    d.querySelector(".rn").onclick=e=>{e.stopPropagation();const n=prompt("Novo nome da conversa:",c.title);if(n){c.title=n.slice(0,60);save(K.convos,convos);renderConvos()}};
+    d.querySelector(".del").onclick=e=>{e.stopPropagation();if(!confirm("Apagar esta conversa?"))return;convos=convos.filter(x=>x.id!==c.id);if(currentId===c.id)currentId=null;save(K.convos,convos);save(K.cur,currentId);renderConvos();renderMessages();renderRefine()};
+    el.appendChild(d);
+  });
+}
+function renderMessages(){
+  const convo=getConvo();messagesEl.innerHTML="";
+  if(!convo||convo.messages.length===0){
+    const m=MODES[currentMode];const w=document.createElement("div");w.className="welcome";
+    w.innerHTML=`<h2>${m.icon} ${m.title}</h2><p>${m.sub}<br>Cliente ativo: <b>${escapeHtml(getClient().memory.name||"—")}</b>. Memória preenchida = respostas sob medida. Comece por uma sugestão:</p>`;
+    const ch=document.createElement("div");ch.className="chips";
+    m.chips.forEach(t=>{const c=document.createElement("button");c.className="chip";c.textContent=t;c.onclick=()=>{inputEl.value=t;autoGrow();inputEl.focus()};ch.appendChild(c)});
+    w.appendChild(ch);messagesEl.appendChild(w);return;
+  }
+  convo.messages.forEach((msg,idx)=>addMessageEl(msg.role,msg.content,idx,false));
+  messagesEl.scrollTop=messagesEl.scrollHeight;
+}
+function addMessageEl(role,content,idx,scroll=true){
+  const wrap=document.createElement("div");wrap.className="wrap";
+  const isUser=role==="user";const m=document.createElement("div");m.className="msg "+(isUser?"user":"ai");
+  m.innerHTML=`<div class="av">${isUser?"🧑":"📈"}</div><div class="body"><div class="who">${isUser?"Você":"Diretora Sênior"}</div><div class="bubble"></div></div>`;
+  const bubble=m.querySelector(".bubble");
+  if(isUser){bubble.textContent=content;
+    const acts=document.createElement("div");acts.className="acts";
+    const ed=document.createElement("button");ed.className="act";ed.innerHTML="✎ Editar e reenviar";
+    ed.onclick=()=>{const convo=getConvo();convo.messages=convo.messages.slice(0,idx);save(K.convos,convos);renderMessages();inputEl.value=content;autoGrow();inputEl.focus();renderRefine()};
+    acts.appendChild(ed);m.querySelector(".body").appendChild(acts);
+  } else {
+    bubble.innerHTML=renderMarkdown(content);
+    const acts=document.createElement("div");acts.className="acts";
+    acts.appendChild(mkAct("📋 Copiar",()=>navigator.clipboard.writeText(content),true));
+    acts.appendChild(mkAct("⭐ Salvar",()=>{savedItems.unshift({id:uid(),content,clientId:activeClient});save(K.saved,savedItems)}));
+    acts.appendChild(mkAct("🔄 Regenerar",()=>regenerate(idx)));
+    if(content.includes("|")&&content.includes("---")){
+      acts.appendChild(mkAct("🗂️ Copiar p/ Notion",()=>navigator.clipboard.writeText(content)));
+      acts.appendChild(mkAct("⬇️ Baixar .CSV",()=>downloadCSV(content)));
+    }
+    m.querySelector(".body").appendChild(acts);
+  }
+  wrap.appendChild(m);messagesEl.appendChild(wrap);
+  if(scroll)messagesEl.scrollTop=messagesEl.scrollHeight;
+  return bubble;
+}
+function mkAct(label,fn,isCopy){
+  const b=document.createElement("button");b.className="act";b.innerHTML=label;
+  b.onclick=()=>{fn();if(isCopy||label.includes("Notion")){const o=b.innerHTML;b.innerHTML="✓ Copiado";b.classList.add("ok");setTimeout(()=>{b.innerHTML=o;b.classList.remove("ok")},1400)}else if(label.includes("Salvar")){const o=b.innerHTML;b.innerHTML="✓ Salvo";b.classList.add("ok");setTimeout(()=>{b.innerHTML=o;b.classList.remove("ok")},1400)}};
+  return b;
+}
+function renderRefine(){
+  const bar=$("#refineBar");const convo=getConvo();
+  const hasAI=convo&&convo.messages.some(m=>m.role==="assistant");
+  if(!hasAI){bar.style.display="none";return}
+  bar.style.display="flex";bar.innerHTML="";
+  [["✋ Menos genérico","Está genérico demais. Reescreva de forma específica, com exemplos concretos, números e o porquê estratégico. Nada óbvio."],
+   ["✂️ Mais curto","Reescreva de forma bem mais curta e direta, mantendo só o essencial."],
+   ["🔥 Mais ousado","Deixe mais ousado, com ganchos mais fortes e linguagem que prende mais."],
+   ["🧪 3 variações","Me dê 3 variações diferentes dessa última resposta."],
+   ["📣 CTA forte","Adicione um CTA forte e específico no final, voltado para venda/agendamento."]
+  ].forEach(([lab,pr])=>{const c=document.createElement("button");c.className="chip";c.textContent=lab;c.onclick=()=>{inputEl.value=pr;sendMessage()};bar.appendChild(c)});
+}
+
+/* ---------- enviar / stream ---------- */
+function autoGrow(){inputEl.style.height="auto";inputEl.style.height=Math.min(inputEl.scrollHeight,200)+"px";$("#charCount").textContent=inputEl.value.length+" caracteres"}
+function buildSystem(){
+  let sys=BASE_PROMPT;const a=MODES[currentMode].addon;
+  if(a)sys+="\n\n=== MODO ATIVO: "+MODES[currentMode].title+" ===\n"+a;
+  const mem=getClient().memory;const F=[["Empresa",mem.name],["Nicho",mem.nicho],["Persona/Público",mem.persona],["Produto/Oferta",mem.oferta],["Ticket/Preço",mem.ticket],["Proposta de valor",mem.proposta],["Tom de voz",mem.tom],["Concorrentes",mem.concorrentes],["Metas/KPIs",mem.metas],["Objeções",mem.objecoes],["Gatilhos",mem.gatilhos],["Pilares",mem.pilares],["Observações",mem.obs]];
+  const filled=F.filter(([k,v])=>v&&String(v).trim());
+  if(filled.length)sys+="\n\n=== MEMÓRIA / CONTEXTO DA EMPRESA (use sempre, responda como dona deste negócio) ===\n"+filled.map(([k,v])=>"- "+k+": "+v).join("\n");
+  return sys;
+}
+async function sendMessage(){
+  if(streaming){if(abortCtl)abortCtl.abort();return}
+  const text=inputEl.value.trim();if(!text)return;
+  if(!getConvo()){const id=uid();convos.push({id,clientId:activeClient,mode:currentMode,title:text.slice(0,46),pinned:0,messages:[],createdAt:Date.now(),updatedAt:Date.now()});currentId=id;save(K.cur,id)}
+  const convo=getConvo();
+  if(convo.messages.length===0){convo.title=text.slice(0,46);convo.mode=currentMode}
+  convo.messages.push({role:"user",content:text});convo.updatedAt=Date.now();
+  save(K.convos,convos);renderConvos();
+  if(messagesEl.querySelector(".welcome"))messagesEl.innerHTML="";
+  addMessageEl("user",text,convo.messages.length-1);
+  inputEl.value="";autoGrow();
+  await streamAssistant(convo);
+}
+async function regenerate(idx){
+  const convo=getConvo();if(!convo)return;
+  convo.messages=convo.messages.slice(0,idx); // remove a resposta (e o que vier depois)
+  save(K.convos,convos);renderMessages();
+  await streamAssistant(convo);
+}
+async function streamAssistant(convo){
+  const aiBubble=addMessageEl("assistant","",convo.messages.length);
+  aiBubble.classList.add("cursor");aiBubble.innerHTML="<span style='color:var(--muted)'>pensando…</span>";
+  const payload={model:settings.model,stream:true,options:{temperature:Number(settings.temp)},messages:[{role:"system",content:buildSystem()},...convo.messages.map(m=>({role:m.role,content:m.content}))]};
+  streaming=true;setSendStop(true);abortCtl=new AbortController();let acc="";
+  try{
+    const res=await fetch(settings.url.replace(/\/$/,"")+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:abortCtl.signal});
+    if(!res.ok)throw new Error("HTTP "+res.status);
+    const reader=res.body.getReader();const dec=new TextDecoder();let buf="";
+    while(true){const{done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const parts=buf.split("\n");buf=parts.pop();
+      for(const line of parts){if(!line.trim())continue;try{const j=JSON.parse(line);if(j.message&&j.message.content){acc+=j.message.content;aiBubble.classList.remove("cursor");aiBubble.innerHTML=renderMarkdown(acc)+'<span class="cursor"></span>';messagesEl.scrollTop=messagesEl.scrollHeight}}catch(e){}}}
+    aiBubble.innerHTML=renderMarkdown(acc);aiBubble.classList.remove("cursor");
+    convo.messages.push({role:"assistant",content:acc});convo.updatedAt=Date.now();save(K.convos,convos);renderMessages();renderRefine();
+  }catch(err){
+    aiBubble.classList.remove("cursor");
+    if(err.name==="AbortError"&&acc){aiBubble.innerHTML=renderMarkdown(acc);convo.messages.push({role:"assistant",content:acc});save(K.convos,convos);renderMessages()}
+    else aiBubble.innerHTML=errHtml(err);
+  }finally{streaming=false;setSendStop(false);abortCtl=null;checkConnection()}
+}
+function setSendStop(on){sendBtn.classList.toggle("stop",on);sendBtn.innerHTML=on?"■":"➤";sendBtn.title=on?"Parar":"Enviar"}
+function errHtml(err){return `<div style="color:var(--bad);font-weight:600;margin-bottom:8px">⚠️ Não consegui falar com a IA local.</div><div style="color:var(--muted);font-size:13px;line-height:1.6">1️⃣ O <b>Ollama</b> está aberto? Abra o app Ollama ou rode <code>ollama serve</code>.<br>2️⃣ Abriu pelo arquivo <b>ABRIR PAINEL.bat</b>? (precisa rodar via servidor, não dois cliques no .html)<br>3️⃣ O modelo <code>${escapeHtml(settings.model)}</code> existe? Rode <code>ollama pull ${escapeHtml(settings.model)}</code> ou troque em ⚙️.<br><br>Detalhe: ${escapeHtml(err.message||String(err))}</div>`}
+
+/* ---------- export ---------- */
+function downloadFile(name,content,type){const b=new Blob([content],{type:type||"text/plain;charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
+function downloadCSV(md){
+  const lines=md.split("\n").filter(l=>/^\s*\|.*\|\s*$/.test(l)&&!/^\s*\|[\s:|-]+\|\s*$/.test(l));
+  if(!lines.length)return;
+  const rows=lines.map(l=>l.trim().replace(/^\||\|$/g,"").split("|").map(c=>'"'+c.trim().replace(/"/g,'""')+'"').join(","));
+  downloadFile("calendario.csv","﻿"+rows.join("\n"),"text/csv;charset=utf-8");
+}
+function exportConvoMd(){const c=getConvo();if(!c)return;const md=c.messages.map(m=>(m.role==="user"?"## 🧑 Você\n":"## 📈 Diretora\n")+m.content).join("\n\n---\n\n");downloadFile((c.title||"conversa")+".md",md)}
+
+/* ---------- conexão ---------- */
+async function checkConnection(){
+  const dots=[$("#dot1")];
+  try{const r=await fetch(settings.url.replace(/\/$/,"")+"/api/tags");if(!r.ok)throw 0;const j=await r.json();const models=(j.models||[]).map(m=>m.name);dots.forEach(d=>d.className="dot on");$("#statusText").textContent="Conectada • "+(settings.model);return models}
+  catch(e){dots.forEach(d=>d.className="dot off");$("#statusText").textContent="Ollama desconectado";return null}
+}
+async function populateModels(){const sel=$("#setModel");const models=await checkConnection();sel.innerHTML="";const list=models&&models.length?models:[settings.model];list.forEach(m=>{const o=document.createElement("option");o.value=m;o.textContent=m;if(m===settings.model)o.selected=true;sel.appendChild(o)});if(models&&!models.includes(settings.model)){const o=document.createElement("option");o.value=settings.model;o.textContent=settings.model+" (não baixado)";o.selected=true;sel.appendChild(o)}}
+
+/* ---------- memória modal ---------- */
+const MF=["name","nicho","persona","oferta","ticket","proposta","tom","concorrentes","metas","objecoes","gatilhos","pilares","obs"];
+function openMemory(){const mem=getClient().memory;MF.forEach(f=>{const el=$("#m_"+f);if(el)el.value=mem[f]||""});$("#memClientName").textContent="— "+(mem.name||"");$("#memoryModal").classList.add("show")}
+function saveMemoryFromModal(){const c=getClient();MF.forEach(f=>{const el=$("#m_"+f);if(el)c.memory[f]=el.value});save(K.clients,clients);renderClients();renderMessages();$("#memoryModal").classList.remove("show")}
+
+/* ---------- templates / saved ---------- */
+function openTemplates(){const box=$("#tplList");box.innerHTML="";Object.entries(TEMPLATES).forEach(([cat,items])=>{const h=document.createElement("div");h.className="tpl-cat";h.textContent=cat;box.appendChild(h);items.forEach(([t,p,mode])=>{const b=document.createElement("button");b.className="tpl";b.innerHTML=`<b>${t}</b><span>${escapeHtml(p)}</span>`;b.onclick=()=>{if(mode){currentMode=mode;renderModes();$("#headTitle").textContent=MODES[mode].title;$("#headSub").textContent=MODES[mode].sub}$("#templatesModal").classList.remove("show");inputEl.value=p;autoGrow();inputEl.focus()};box.appendChild(b)})});$("#templatesModal").classList.add("show")}
+function openSaved(){const box=$("#savedList");box.innerHTML="";const list=savedItems.filter(s=>s.clientId===activeClient);if(!list.length){box.innerHTML='<div style="color:var(--muted);font-size:13px">Nada salvo ainda. Clique em ⭐ Salvar numa resposta.</div>'}list.forEach(s=>{const d=document.createElement("div");d.className="saved-item";d.innerHTML=`<span class="rm" title="Remover">✕</span>`+escapeHtml(s.content.slice(0,600))+(s.content.length>600?"…":"");d.querySelector(".rm").onclick=()=>{savedItems=savedItems.filter(x=>x.id!==s.id);save(K.saved,savedItems);openSaved()};box.appendChild(d)});$("#savedModal").classList.add("show")}
+
+/* ---------- tema ---------- */
+function applyTheme(){document.documentElement.setAttribute("data-theme",settings.theme);$("#toggleTheme").textContent=settings.theme==="dark"?"🌙":"☀️"}
+
+/* ---------- eventos ---------- */
+sendBtn.onclick=sendMessage;
+inputEl.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});
+inputEl.addEventListener("input",autoGrow);
+$("#search").addEventListener("input",renderConvos);
+$("#newChat").onclick=()=>{currentId=null;save(K.cur,null);renderConvos();renderMessages();renderRefine();inputEl.focus()};
+$("#menuBtn").onclick=()=>$("#sidebar").classList.toggle("open");
+$("#clientSel").onchange=e=>{activeClient=e.target.value;save(K.active,activeClient);currentId=null;save(K.cur,null);renderConvos();renderMessages();renderRefine()};
+$("#newClient").onclick=()=>{const name=prompt("Nome do novo cliente/empresa:");if(!name)return;const c={id:uid(),memory:{name,nicho:"",persona:"",oferta:"",ticket:"",proposta:"",tom:"",concorrentes:"",metas:"",objecoes:"",gatilhos:"",pilares:"",obs:""}};clients.push(c);activeClient=c.id;save(K.clients,clients);save(K.active,activeClient);renderClients();currentId=null;renderConvos();renderMessages();openMemory()};
+$("#editClient").onclick=openMemory;$("#openMemory").onclick=openMemory;
+$("#closeMemory").onclick=()=>$("#memoryModal").classList.remove("show");
+$("#saveMemory").onclick=saveMemoryFromModal;
+$("#fillExample").onclick=()=>{MF.forEach(f=>{const el=$("#m_"+f);if(el&&!el.value.trim())el.value=EXAMPLE_MEMORY[f]||""})};
+$("#openTemplates").onclick=openTemplates;
+$("#openSaved").onclick=openSaved;
+$("#toggleTheme").onclick=()=>{settings.theme=settings.theme==="dark"?"light":"dark";save(K.settings,settings);applyTheme()};
+document.querySelectorAll(".modal-bg").forEach(mb=>mb.addEventListener("click",e=>{if(e.target===mb)mb.classList.remove("show")}));
+
+/* settings */
+$("#openSettings").onclick=()=>{$("#setUrl").value=settings.url;$("#setBrand").value=settings.brand||"";$("#setTemp").value=settings.temp;$("#tempVal").textContent=settings.temp;populateModels();$("#settingsModal").classList.add("show")};
+$("#setTemp").addEventListener("input",e=>$("#tempVal").textContent=e.target.value);
+$("#saveSettings").onclick=()=>{settings.url=$("#setUrl").value.trim()||"http://localhost:11434";settings.model=$("#setModel").value;settings.temp=Number($("#setTemp").value);settings.brand=$("#setBrand").value.trim();save(K.settings,settings);$("#brandName").textContent=settings.brand||"Diretora Sênior IA";$("#settingsModal").classList.remove("show");checkConnection()};
+$("#testConn").onclick=async()=>{const r=$("#testResult");r.style.color="var(--muted)";r.textContent="Testando…";const old=settings.url;settings.url=$("#setUrl").value.trim();const m=await checkConnection();settings.url=old;if(m){r.style.color="var(--good)";r.textContent="✓ Conectado! Modelos: "+(m.join(", ")||"nenhum");populateModels()}else{r.style.color="var(--bad)";r.textContent="✗ Não conectou. Abra o Ollama e use o ABRIR PAINEL.bat."}};
+$("#exportData").onclick=()=>downloadFile("backup-painel-ia.json",JSON.stringify({clients,convos,savedItems,settings,v:2},null,2),"application/json");
+$("#importData").onclick=()=>$("#importFile").click();
+$("#importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);if(d.clients){clients=d.clients;save(K.clients,clients)}if(d.convos){convos=d.convos;save(K.convos,convos)}if(d.savedItems){savedItems=d.savedItems;save(K.saved,savedItems)}if(d.settings){settings=Object.assign(settings,d.settings);save(K.settings,settings)}activeClient=clients[0]?.id;save(K.active,activeClient);alert("Backup importado com sucesso!");location.reload()}catch(x){alert("Arquivo inválido.")}};rd.readAsText(f)};
+
+/* voz */
+let recog=null;
+$("#micBtn").onclick=()=>{
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert("Seu navegador não suporta ditado por voz. Use o Chrome/Edge.");return}
+  if(recog){recog.stop();return}
+  recog=new SR();recog.lang="pt-BR";recog.interimResults=false;recog.continuous=false;
+  $("#micBtn").classList.add("rec");
+  recog.onresult=ev=>{const t=ev.results[0][0].transcript;inputEl.value=(inputEl.value?inputEl.value+" ":"")+t;autoGrow()};
+  recog.onend=()=>{$("#micBtn").classList.remove("rec");recog=null};
+  recog.onerror=()=>{$("#micBtn").classList.remove("rec");recog=null};
+  recog.start();
+};
+
+/* atalhos */
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="k"){e.preventDefault();$("#search").focus()}if(e.key==="Escape")document.querySelectorAll(".modal-bg.show").forEach(m=>m.classList.remove("show"))});
+
+/* libs */
+(function(s){const x=document.createElement("script");x.src=s;document.head.appendChild(x)})("https://cdn.jsdelivr.net/npm/marked/marked.min.js");
+(function(s){const x=document.createElement("script");x.src=s;document.head.appendChild(x)})("https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js");
+
+/* init */
+applyTheme();
+$("#brandName").textContent=settings.brand||"Diretora Sênior IA";
+renderClients();renderModes();renderConvos();
+$("#headTitle").textContent=MODES[currentMode].title;$("#headSub").textContent=MODES[currentMode].sub;
+if(currentId&&getConvo()){currentMode=getConvo().mode||"geral";renderModes();$("#headTitle").textContent=MODES[currentMode].title;$("#headSub").textContent=MODES[currentMode].sub}
+renderMessages();renderRefine();autoGrow();checkConnection();setInterval(checkConnection,15000);
+</script>
+</body>
+</html>
