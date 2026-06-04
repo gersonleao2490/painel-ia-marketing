@@ -39,7 +39,7 @@ Clique no especialista **antes** de perguntar.
 - **🧲 Ganchos** — banco de ganchos virais pra salvar e reaproveitar (e gerar 10 com IA).
 - **👥 CRM** — agora exporta em **CSV** e **PDF** (relatório dos influenciadores).
 - **🖨️ PDF** — em qualquer resposta, botão para **salvar como PDF** (entregar pro cliente).
-- **📎 Analisar imagem e vídeo** — clique no 📎 e anexe um **print** (perfil/criativo) **ou um vídeo** (.mp4). Para vídeo, o painel monta um "storyboard" com 6 quadros e a IA analisa o visual e o gancho. (Modelo de visão **`llava-llama3`** já instalado — mais preciso. A 1ª análise demora um pouco mais (carrega o modelo); depois fica rápida. Pra mais velocidade, troque por `llava` em ⚙️.) *Observação honesta: ela analisa o **visual**; ainda não "ouve" o áudio nem vê a retenção real (isso é dado da plataforma).*
+- **📎 Analisar imagem e vídeo** — clique no 📎 e anexe um **print** (perfil/criativo) **ou um vídeo** (.mp4). Para vídeo, o painel monta um "storyboard" com 6 quadros e a IA analisa o visual e o gancho. (Modelo de visão **`llava`** já instalado e configurado. **Importante:** a 1ª imagem depois de abrir leva ~30s (o Ollama troca o modelo de texto pelo de visão — sua RAM só comporta 1 por vez). **Espere os pontinhos** — não aperte enviar de novo, senão cancela. Depois fica rápido.) *Observação honesta: ela analisa o **visual**; ainda não "ouve" o áudio nem vê a retenção real (isso é dado da plataforma).*
 - **🗂️ Templates** — com Comparar concorrentes, 20 ganchos, Proposta de orçamento, Contrato e Briefing de gravação.
 
 ## 👥 CRM de Influenciadores
