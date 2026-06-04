@@ -6,6 +6,7 @@ server-config.json
 users.json
 sessions.json
 cloudflared.exe
+data/
 backup-painel-ia.json
 *.log
 .DS_Store

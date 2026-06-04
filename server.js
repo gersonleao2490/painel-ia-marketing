@@ -58,6 +58,7 @@ function userFromReq(req) {
   return loadUsers().find(u => u.username === s.username) || null;
 }
 function sidFromReq(req) { const m = (req.headers.cookie || '').match(/(?:^|;\s*)sid=([a-f0-9]+)/); return m ? m[1] : null; }
+function userFile(u) { return crypto.createHash('sha256').update(String(u).toLowerCase()).digest('hex').slice(0, 16) + '.json'; }
 
 /* ---------- anti força-bruta (simples) ---------- */
 const fails = {};
@@ -141,8 +142,15 @@ const server = http.createServer((req, res) => {
   });
 
   // ---- daqui pra baixo exige login ----
-  const protectedApi = url.startsWith('/api/') || ['/notion', '/config', '/test', '/notion-health'].includes(url);
+  const protectedApi = url.startsWith('/api/') || ['/notion', '/config', '/test', '/notion-health', '/data'].includes(url);
   if (protectedApi && !user) return json(res, 401, { error: 'Faça login para usar.' });
+
+  // ---- sincronização de dados por usuário (acessível de qualquer aparelho) ----
+  if (url === '/data') {
+    const f = path.join(DIR, 'data', userFile(user.username));
+    if (req.method === 'GET') { try { return json(res, 200, JSON.parse(fs.readFileSync(f, 'utf8'))); } catch (e) { return json(res, 200, {}); } }
+    if (req.method === 'POST') return readBody(req, b => { try { fs.mkdirSync(path.join(DIR, 'data'), { recursive: true }); fs.writeFileSync(f, b || '{}'); json(res, 200, { saved: true }); } catch (e) { json(res, 500, { error: String(e.message) }); } });
+  }
 
   if (url.startsWith('/api/')) return proxyOllama(req, res); // Ollama (login ok)
 

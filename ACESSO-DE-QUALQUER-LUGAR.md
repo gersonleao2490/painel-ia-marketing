@@ -29,8 +29,8 @@ Agora o painel tem **login** (só pessoal autorizado entra, senha **criptografad
 
 ## ⚠️ O que você precisa saber (importante e honesto)
 - **Seu PC precisa ficar LIGADO** e com a janela do `ABRIR-ONLINE.bat` aberta. Se desligar, o link para de funcionar (a IA mora no seu PC).
-- O link **gratuito muda toda vez** que você abre o `ABRIR-ONLINE.bat`. Pra ter um link **fixo**, dá pra usar uma conta grátis da Cloudflare — quando quiser, eu configuro.
-- **Seus dados (clientes, CRM, conversas) ficam por aparelho** por enquanto. No celular você loga, mas os clientes que criou no PC não aparecem lá automaticamente. Sincronizar entre aparelhos é um próximo passo (eu faço quando você pedir).
+- O link **gratuito muda toda vez** que você abre o `ABRIR-ONLINE.bat`. **Link fixo (que não muda):** precisa de um **domínio** (~R$ 40/ano) numa conta **grátis** da Cloudflare. Quando você tiver um domínio, eu configuro o "túnel nomeado" e o link fica fixo pra sempre. (Sem domínio, não dá pra ter link fixo de graça.)
+- ✅ **Seus dados SINCRONIZAM entre aparelhos!** Tudo que você cria (clientes, CRM, conversas, ganchos) fica salvo na sua conta. Você loga no celular e **aparece tudo igual** ao do PC. (Enquanto o `ABRIR-ONLINE.bat` estiver ligado no seu PC.)
 - Pra **vender como produto** de verdade (sempre online, sem depender do seu PC), o caminho é hospedar na **nuvem** (tem custo mensal). Te mostro as opções quando chegar a hora.
 
 ---
