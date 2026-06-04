@@ -334,7 +334,7 @@
       <div class="field"><label>Endereço do Ollama</label><input id="setUrl" value="http://localhost:11434" /></div>
       <div class="field"><label>Modelo</label><select id="setModel"></select></div>
     </div>
-    <div class="field"><label>Modelo de visão (para 📎 analisar imagens/vídeos)</label><input id="setVision" value="llava" /><div class="hint" style="margin-top:6px"><code>llava</code> funciona na sua versão do Ollama. Modelos melhores (<code>llama3.2-vision</code>) exigem atualizar o Ollama.</div></div>
+    <div class="field"><label>Modelo de visão (para 📎 analisar imagens/vídeos)</label><input id="setVision" value="llava-llama3" /><div class="hint" style="margin-top:6px"><code>llava-llama3</code> = mais preciso (padrão). <code>llava</code> = mais leve/rápido. Ambos rodam na sua máquina.</div></div>
     <div class="field"><label>Ponte do Notion (avançado — normalmente não mexer)</label><input id="setNotion" value="http://localhost:3333" /></div>
     <div class="field" style="border-top:1px solid var(--line);padding-top:14px">
       <label>🗂️ Conectar o Notion (cole e salve — só 1 vez)</label>
@@ -641,8 +641,8 @@ const SYNC_KEYS=["pim2_clients","pim2_active","pim2_convos","pim2_saved","pim2_c
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){console.warn("Armazenamento cheio?",e)}if(serverMode&&authUser&&!pulling&&SYNC_KEYS.includes(k))scheduleSync();}
 function uid(){return Date.now()+"-"+Math.random().toString(36).slice(2,7)}
 
-let settings=load(K.settings,{url:"http://localhost:11434",model:"qwen2.5:7b",visionModel:"llava",temp:0.7,theme:"dark",brand:"",notionBridge:"http://localhost:3333"});
-if(!settings.visionModel||settings.visionModel==="llama3.2-vision"){settings.visionModel="llava";save(K.settings,settings);}
+let settings=load(K.settings,{url:"http://localhost:11434",model:"qwen2.5:7b",visionModel:"llava-llama3",temp:0.7,theme:"dark",brand:"",notionBridge:"http://localhost:3333"});
+if(!settings.visionMigrated){settings.visionModel="llava-llama3";settings.visionMigrated=true;save(K.settings,settings);}
 let clients=load(K.clients,null);
 let activeClient=load(K.active,null);
 let convos=load(K.convos,[]);
@@ -831,7 +831,7 @@ async function streamAssistant(convo){
   aiBubble.classList.add("cursor");aiBubble.innerHTML='<span class="typing"><span></span><span></span><span></span></span>';
   const lastUser=[...convo.messages].reverse().find(m=>m.role==="user");
   const useVision=!!(lastUser&&lastUser.images&&lastUser.images.length);
-  const model=useVision?(settings.visionModel||"llava"):settings.model;
+  const model=useVision?(settings.visionModel||"llava-llama3"):settings.model;
   const payload={model,stream:true,options:{temperature:Number(settings.temp)},messages:[{role:"system",content:buildSystem()},...convo.messages.map(m=>{const o={role:m.role,content:m.content};if(useVision&&m.images&&m.images.length)o.images=m.images;return o})]};
   streaming=true;setSendStop(true);abortCtl=new AbortController();let acc="";
   try{
@@ -849,7 +849,7 @@ async function streamAssistant(convo){
   }finally{streaming=false;setSendStop(false);abortCtl=null;checkConnection()}
 }
 function setSendStop(on){sendBtn.classList.toggle("stop",on);sendBtn.innerHTML=on?"■":"➤";sendBtn.title=on?"Parar":"Enviar"}
-function errHtml(err,model){model=model||settings.model;const isVision=model===(settings.visionModel||"llava");return `<div style="color:var(--bad);font-weight:600;margin-bottom:8px">⚠️ Não consegui ${isVision?"analisar a imagem":"falar com a IA local"}.</div><div style="color:var(--muted);font-size:13px;line-height:1.6">1️⃣ O <b>Ollama</b> está aberto?<br>2️⃣ Abriu pelo ícone do painel (servidor local)?<br>3️⃣ O modelo <code>${escapeHtml(model)}</code> está instalado? Rode no terminal: <code>ollama pull ${escapeHtml(model)}</code>${isVision?" — necessário para analisar imagens":""} ou troque em ⚙️.<br><br>Detalhe: ${escapeHtml(err.message||String(err))}</div>`}
+function errHtml(err,model){model=model||settings.model;const isVision=model===(settings.visionModel||"llava-llama3");return `<div style="color:var(--bad);font-weight:600;margin-bottom:8px">⚠️ Não consegui ${isVision?"analisar a imagem":"falar com a IA local"}.</div><div style="color:var(--muted);font-size:13px;line-height:1.6">1️⃣ O <b>Ollama</b> está aberto?<br>2️⃣ Abriu pelo ícone do painel (servidor local)?<br>3️⃣ O modelo <code>${escapeHtml(model)}</code> está instalado? Rode no terminal: <code>ollama pull ${escapeHtml(model)}</code>${isVision?" — necessário para analisar imagens":""} ou troque em ⚙️.<br><br>Detalhe: ${escapeHtml(err.message||String(err))}</div>`}
 
 /* ---------- export ---------- */
 function downloadFile(name,content,type){const b=new Blob([content],{type:type||"text/plain;charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
