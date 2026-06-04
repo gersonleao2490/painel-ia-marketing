@@ -26,11 +26,16 @@ Já deixei **3 clientes de exemplo** prontos (Glow Estética, Loja Viver Bem, e 
 
 ---
 
-## 🎯 Os 11 especialistas
+## 🎯 Os 12 especialistas
 
-Diretora de Marketing · Social Media · Influencer · SEO & Conversão · Estratégia/SWOT · Roteirista · **Copywriter** · **Tráfego Pago** · **E-mail/CRM** · Calendário Editorial · Programadora.
+Diretora de Marketing · Social Media · Influencer · SEO & Conversão · Estratégia/SWOT · Roteirista · **Copywriter** · **Tráfego Pago** · **E-mail/CRM** · Calendário Editorial · **Proposta Comercial** (vender seu serviço) · Programadora.
 
 Clique no especialista **antes** de perguntar.
+
+## 🧰 Outras ferramentas
+- **🖨️ PDF** — em qualquer resposta, botão para **salvar como PDF** (entregar pro cliente).
+- **📎 Analisar imagem** — anexe um print de perfil/criativo e a IA comenta. Precisa instalar 1 vez o modelo de visão: no terminal rode **`ollama pull llava`** (depois é só usar).
+- **🗂️ Templates** — agora com Comparar concorrentes, 20 ganchos virais e Proposta de orçamento.
 
 ## 👥 CRM de Influenciadores
 No topo, botão **👥 CRM**: cadastre seus criadores por cliente. Ele calcula sozinho a **taxa de engajamento** e o **ROI** (lucro), e tem o botão **🤖 Analisar com IA** que manda os dados pro especialista de influência te dar o parecer.
