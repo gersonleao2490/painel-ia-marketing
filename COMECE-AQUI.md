@@ -39,7 +39,7 @@ Clique no especialista **antes** de perguntar.
 - **🧲 Ganchos** — banco de ganchos virais pra salvar e reaproveitar (e gerar 10 com IA).
 - **👥 CRM** — agora exporta em **CSV** e **PDF** (relatório dos influenciadores).
 - **🖨️ PDF** — em qualquer resposta, botão para **salvar como PDF** (entregar pro cliente).
-- **📎 Analisar imagem** — anexe um print de perfil/criativo e a IA comenta. Precisa instalar 1 vez o modelo de visão: no terminal rode **`ollama pull llava`**.
+- **📎 Analisar imagem e vídeo** — clique no 📎 e anexe um **print** (perfil/criativo) **ou um vídeo** (.mp4). Para vídeo, o painel monta um "storyboard" com 6 quadros e a IA analisa o visual e o gancho. (O modelo de visão `llava` já está instalado.) *Observação honesta: ela analisa o **visual**; ainda não "ouve" o áudio nem vê a retenção real (isso é dado da plataforma).*
 - **🗂️ Templates** — com Comparar concorrentes, 20 ganchos, Proposta de orçamento, Contrato e Briefing de gravação.
 
 ## 👥 CRM de Influenciadores

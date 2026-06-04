@@ -306,13 +306,13 @@
     <div class="composer">
       <div id="imgChip" style="display:none;max-width:840px;margin:0 auto 8px;align-items:center;gap:9px">
         <img id="imgThumb" style="height:38px;width:38px;object-fit:cover;border-radius:7px;border:1px solid var(--line)" />
-        <span style="font-size:12px;color:var(--muted)">Imagem anexada — será analisada</span>
+        <span id="imgChipLabel" style="font-size:12px;color:var(--muted)">Imagem anexada — será analisada</span>
         <button class="act" id="imgRemove">✕ remover</button>
       </div>
       <div class="inner">
         <textarea id="input" rows="1" placeholder="Escreva aqui… (Enter envia, Shift+Enter pula linha)"></textarea>
-        <input type="file" id="imgInput" accept="image/*" style="display:none" />
-        <button class="iconbtn" id="imgBtn" title="Anexar imagem (análise visual)">📎</button>
+        <input type="file" id="imgInput" accept="image/*,video/*" style="display:none" />
+        <button class="iconbtn" id="imgBtn" title="Anexar imagem ou vídeo (análise visual)">📎</button>
         <button class="iconbtn" id="micBtn" title="Falar (ditar)">🎤</button>
         <button class="send" id="send" title="Enviar">➤</button>
       </div>
@@ -650,7 +650,7 @@ let crm=load(K.crm,[]);
 let hooks=load(K.hooks,[]);
 let checklist=load(K.checklist,{});
 let currentId=load(K.cur,null);
-let currentMode="geral", streaming=false, abortCtl=null, pendingImage=null;
+let currentMode="geral", streaming=false, abortCtl=null, pendingImages=[];
 function ollamaBase(){return serverMode?"":(settings.url||"http://localhost:11434").replace(/\/$/,"")}
 function notionBase(){return serverMode?"":(settings.notionBridge||"http://localhost:3333").replace(/\/$/,"")}
 
@@ -804,9 +804,9 @@ function buildSystem(){
 }
 async function sendMessage(){
   if(streaming){if(abortCtl)abortCtl.abort();return}
-  let text=inputEl.value.trim();const img=pendingImage;
-  if(!text&&!img)return;
-  if(!text&&img)text="Analise esta imagem (perfil ou criativo) e diga o que está bom, o que melhorar e como usar para vender mais.";
+  let text=inputEl.value.trim();const imgs=pendingImages.slice();
+  if(!text&&!imgs.length)return;
+  if(!text&&imgs.length)text="Analise esta imagem (perfil ou criativo) e diga o que está bom, o que melhorar e como usar para vender mais.";
   if(!getConvo()){const id=uid();convos.push({id,clientId:activeClient,mode:currentMode,title:text.slice(0,46),pinned:0,messages:[],createdAt:Date.now(),updatedAt:Date.now()});currentId=id;save(K.cur,id)}
   const convo=getConvo();
   if(convo.messages.length===0){convo.title=text.slice(0,46);convo.mode=currentMode}
@@ -828,9 +828,10 @@ async function regenerate(idx){
 async function streamAssistant(convo){
   const aiBubble=addMessageEl("assistant","",convo.messages.length);
   aiBubble.classList.add("cursor");aiBubble.innerHTML='<span class="typing"><span></span><span></span><span></span></span>';
-  const useVision=convo.messages.some(m=>m.images&&m.images.length);
+  const lastUser=[...convo.messages].reverse().find(m=>m.role==="user");
+  const useVision=!!(lastUser&&lastUser.images&&lastUser.images.length);
   const model=useVision?(settings.visionModel||"llava"):settings.model;
-  const payload={model,stream:true,options:{temperature:Number(settings.temp)},messages:[{role:"system",content:buildSystem()},...convo.messages.map(m=>{const o={role:m.role,content:m.content};if(m.images&&m.images.length)o.images=m.images;return o})]};
+  const payload={model,stream:true,options:{temperature:Number(settings.temp)},messages:[{role:"system",content:buildSystem()},...convo.messages.map(m=>{const o={role:m.role,content:m.content};if(useVision&&m.images&&m.images.length)o.images=m.images;return o})]};
   streaming=true;setSendStop(true);abortCtl=new AbortController();let acc="";
   try{
     const res=await fetch(ollamaBase()+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:abortCtl.signal});
@@ -1088,20 +1089,44 @@ $("#micBtn").onclick=()=>{
   recog.start();
 };
 
-/* imagem (análise visual com modelo de visão) */
-function clearImage(){pendingImage=null;$("#imgChip").style.display="none";$("#imgInput").value="";}
+/* anexar imagem OU vídeo (análise visual) */
+function clearImage(){pendingImages=[];$("#imgChip").style.display="none";$("#imgInput").value="";}
+function setChip(dataUrl,label){pendingImages=[dataUrl.split(",")[1]];$("#imgThumb").src=dataUrl;$("#imgChipLabel").textContent=label||"Imagem anexada — será analisada";$("#imgChip").style.display="flex";}
 $("#imgBtn").onclick=()=>$("#imgInput").click();
 $("#imgRemove").onclick=clearImage;
 $("#imgInput").onchange=e=>{
   const f=e.target.files[0];if(!f)return;
+  if(f.type.startsWith("video")){
+    toast("Lendo o vídeo… aguarde alguns segundos");
+    videoToGrid(f,(grid)=>{setChip(grid,"Vídeo anexado (quadros) — será analisado");
+      if(!inputEl.value.trim()){inputEl.value="Esta imagem é um storyboard com vários quadros (em ordem) de um vídeo meu. Analise o vídeo: gancho visual nos 3 primeiros segundos, ritmo, o que está bom, o que melhorar e como prender mais a atenção para vender.";autoGrow();}
+    });
+    return;
+  }
   const fr=new FileReader();
   fr.onload=()=>{const img=new Image();img.onload=()=>{
     let w=img.width,h=img.height;const max=900;const s=Math.min(1,max/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);
     const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);
-    const dataUrl=c.toDataURL("image/jpeg",0.7);pendingImage=dataUrl.split(",")[1];$("#imgThumb").src=dataUrl;$("#imgChip").style.display="flex";
+    setChip(c.toDataURL("image/jpeg",0.7));
   };img.onerror=()=>alert("Não consegui ler essa imagem.");img.src=fr.result;};
   fr.readAsDataURL(f);
 };
+function videoToGrid(file,cb){
+  const video=document.createElement("video");video.muted=true;video.playsInline=true;video.preload="auto";
+  const url=URL.createObjectURL(file);video.src=url;
+  video.onloadedmetadata=()=>{
+    const dur=(video.duration&&isFinite(video.duration))?video.duration:0;
+    const N=6,cols=3,rows=2,fw=320,fh=180;
+    const canvas=document.createElement("canvas");canvas.width=cols*fw;canvas.height=rows*fh;
+    const ctx=canvas.getContext("2d");ctx.fillStyle="#0a0a12";ctx.fillRect(0,0,canvas.width,canvas.height);
+    let i=0;
+    function grab(){if(i>=N){URL.revokeObjectURL(url);cb(canvas.toDataURL("image/jpeg",0.72));return;}const t=dur?dur*((i+0.5)/N):0;try{video.currentTime=Math.min(t,Math.max(0,dur-0.05));}catch(e){draw();}}
+    function draw(){const col=i%cols,row=Math.floor(i/cols);try{ctx.drawImage(video,col*fw,row*fh,fw,fh);}catch(e){}ctx.fillStyle="rgba(124,92,255,.9)";ctx.fillRect(col*fw,row*fh,30,21);ctx.fillStyle="#fff";ctx.font="bold 13px sans-serif";ctx.fillText(String(i+1),col*fw+10,row*fh+15);i++;grab();}
+    video.onseeked=draw;
+    grab();
+  };
+  video.onerror=()=>alert("Não consegui ler esse vídeo. Tente um arquivo MP4.");
+}
 
 /* atalhos */
 document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="k"){e.preventDefault();$("#search").focus()}if(e.key==="Escape")document.querySelectorAll(".modal-bg.show").forEach(m=>m.classList.remove("show"))});
