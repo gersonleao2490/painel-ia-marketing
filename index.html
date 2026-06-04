@@ -334,7 +334,7 @@
       <div class="field"><label>Endereço do Ollama</label><input id="setUrl" value="http://localhost:11434" /></div>
       <div class="field"><label>Modelo</label><select id="setModel"></select></div>
     </div>
-    <div class="field"><label>Modelo de visão (para 📎 analisar imagens) — instale uma vez com <code>ollama pull llava</code></label><input id="setVision" value="llava" /></div>
+    <div class="field"><label>Modelo de visão (para 📎 analisar imagens/vídeos)</label><input id="setVision" value="llava" /><div class="hint" style="margin-top:6px"><code>llava</code> funciona na sua versão do Ollama. Modelos melhores (<code>llama3.2-vision</code>) exigem atualizar o Ollama.</div></div>
     <div class="field"><label>Ponte do Notion (avançado — normalmente não mexer)</label><input id="setNotion" value="http://localhost:3333" /></div>
     <div class="field" style="border-top:1px solid var(--line);padding-top:14px">
       <label>🗂️ Conectar o Notion (cole e salve — só 1 vez)</label>
@@ -642,6 +642,7 @@ function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){consol
 function uid(){return Date.now()+"-"+Math.random().toString(36).slice(2,7)}
 
 let settings=load(K.settings,{url:"http://localhost:11434",model:"qwen2.5:7b",visionModel:"llava",temp:0.7,theme:"dark",brand:"",notionBridge:"http://localhost:3333"});
+if(!settings.visionModel||settings.visionModel==="llama3.2-vision"){settings.visionModel="llava";save(K.settings,settings);}
 let clients=load(K.clients,null);
 let activeClient=load(K.active,null);
 let convos=load(K.convos,[]);
