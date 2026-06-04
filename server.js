@@ -110,7 +110,7 @@ function proxyOllama(req, res) {
 
 /* ---------- static ---------- */
 function serveIndex(res) {
-  fs.readFile(path.join(DIR, 'index.html'), (e, buf) => { if (e) { res.writeHead(500); res.end('index.html não encontrado'); } else { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(buf); } });
+  fs.readFile(path.join(DIR, 'index.html'), (e, buf) => { if (e) { res.writeHead(500); res.end('index.html não encontrado'); } else { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache, no-store, must-revalidate' }); res.end(buf); } });
 }
 
 /* ---------- servidor ---------- */

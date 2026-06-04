@@ -811,7 +811,7 @@ async function sendMessage(){
   if(!getConvo()){const id=uid();convos.push({id,clientId:activeClient,mode:currentMode,title:text.slice(0,46),pinned:0,messages:[],createdAt:Date.now(),updatedAt:Date.now()});currentId=id;save(K.cur,id)}
   const convo=getConvo();
   if(convo.messages.length===0){convo.title=text.slice(0,46);convo.mode=currentMode}
-  const msg={role:"user",content:text};if(img)msg.images=[img];
+  const msg={role:"user",content:text};if(imgs.length)msg.images=imgs;
   convo.messages.push(msg);convo.updatedAt=Date.now();
   clearImage();
   save(K.convos,convos);renderConvos();
