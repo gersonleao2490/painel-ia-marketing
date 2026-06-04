@@ -1,0 +1,6 @@
+{
+  "_comentario": "Copie este arquivo para 'notion-config.json' e preencha. Veja NOTION-COMO-CONECTAR.md. NUNCA suba o notion-config.json real no GitHub (ja esta protegido no .gitignore).",
+  "token": "COLE_AQUI_SEU_TOKEN_DO_NOTION",
+  "databaseId": "COLE_AQUI_O_ID_OU_LINK_DA_SUA_DATABASE",
+  "port": 3333
+}

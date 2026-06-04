@@ -1,6 +1,7 @@
 # Nada de segredos ou lixo no repositório
 *.env
 .env
+notion-config.json
 backup-painel-ia.json
 *.log
 .DS_Store

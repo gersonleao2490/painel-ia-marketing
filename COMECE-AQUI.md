@@ -60,7 +60,10 @@ Clique no especialista **antes** de perguntar.
 ## 🗂️ Calendário → Notion / Excel
 
 1. Especialista **🗓️ Calendário Editorial** → peça "calendário de 7 dias".
-2. **🗂️ Copiar p/ Notion** (cola formatado) ou **⬇️ Baixar .CSV** (abre no Excel/Sheets).
+2. Opções no resultado:
+   - **🚀 Enviar pro Notion** — manda **automático** pro Notion (configure 1 vez: veja **NOTION-COMO-CONECTAR.md** e abra tudo com o **`ABRIR TUDO (painel + notion).bat`**).
+   - **🗂️ Copiar p/ Notion** — cola formatado (sem configurar nada).
+   - **⬇️ Baixar .CSV** — abre no Excel/Sheets.
 
 ---
 

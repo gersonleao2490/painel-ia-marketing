@@ -245,6 +245,7 @@
       <div class="field"><label>Endereço do Ollama</label><input id="setUrl" value="http://localhost:11434" /></div>
       <div class="field"><label>Modelo</label><select id="setModel"></select></div>
     </div>
+    <div class="field"><label>Ponte do Notion (calendário automático) — veja NOTION-COMO-CONECTAR.md</label><input id="setNotion" value="http://localhost:3333" /></div>
     <div class="field">
       <label>Criatividade (temperatura): <b id="tempVal">0.7</b> — baixo = focado, alto = ousado</label>
       <div class="range"><span>Focado</span><input type="range" id="setTemp" min="0" max="1.2" step="0.1" value="0.7" /><span>Ousado</span></div>
@@ -431,7 +432,7 @@ function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function uid(){return Date.now()+"-"+Math.random().toString(36).slice(2,7)}
 
-let settings=load(K.settings,{url:"http://localhost:11434",model:"qwen2.5:7b",temp:0.7,theme:"dark",brand:""});
+let settings=load(K.settings,{url:"http://localhost:11434",model:"qwen2.5:7b",temp:0.7,theme:"dark",brand:"",notionBridge:"http://localhost:3333"});
 let clients=load(K.clients,null);
 let activeClient=load(K.active,null);
 let convos=load(K.convos,[]);
@@ -546,6 +547,7 @@ function addMessageEl(role,content,idx,scroll=true){
     acts.appendChild(mkAct("⭐ Salvar",()=>{savedItems.unshift({id:uid(),content,clientId:activeClient});save(K.saved,savedItems)}));
     acts.appendChild(mkAct("🔄 Regenerar",()=>regenerate(idx)));
     if(content.includes("|")&&content.includes("---")){
+      const nb=document.createElement("button");nb.className="act";nb.innerHTML="🚀 Enviar pro Notion";nb.onclick=()=>sendToNotion(content,nb);acts.appendChild(nb);
       acts.appendChild(mkAct("🗂️ Copiar p/ Notion",()=>navigator.clipboard.writeText(content)));
       acts.appendChild(mkAct("⬇️ Baixar .CSV",()=>downloadCSV(content)));
     }
@@ -633,6 +635,31 @@ function downloadCSV(md){
   downloadFile("calendario.csv","﻿"+rows.join("\n"),"text/csv;charset=utf-8");
 }
 function exportConvoMd(){const c=getConvo();if(!c)return;const md=c.messages.map(m=>(m.role==="user"?"## 🧑 Você\n":"## 📈 Diretora\n")+m.content).join("\n\n---\n\n");downloadFile((c.title||"conversa")+".md",md)}
+function parseTable(md){
+  const lines=md.split("\n").filter(l=>/^\s*\|.*\|\s*$/.test(l));
+  if(lines.length<3)return[];
+  const cl=r=>r.trim().replace(/^\||\|$/g,"").split("|").map(c=>c.trim());
+  const head=cl(lines[0]);const rows=[];
+  for(let i=2;i<lines.length;i++){const c=cl(lines[i]);if(c.every(x=>!x))continue;const o={};head.forEach((h,idx)=>o[h]=c[idx]||"");rows.push(o)}
+  return rows;
+}
+async function sendToNotion(md,btn){
+  const items=parseTable(md);
+  if(!items.length){alert("Não encontrei uma tabela de calendário nesta resposta. Use o especialista 🗓️ Calendário Editorial.");return}
+  const url=(settings.notionBridge||"http://localhost:3333").replace(/\/$/,"")+"/notion";
+  const orig=btn.innerHTML;btn.innerHTML="⏳ Enviando "+items.length+"…";
+  try{
+    const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items})});
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.error||("HTTP "+r.status));
+    btn.innerHTML="✓ "+j.created+"/"+j.total+" no Notion";btn.classList.add("ok");
+    if(j.errors&&j.errors.length)alert("Enviei "+j.created+" de "+j.total+".\nAlguns deram erro:\n\n"+j.errors.slice(0,3).join("\n"));
+    setTimeout(()=>{btn.innerHTML=orig;btn.classList.remove("ok")},4000);
+  }catch(e){
+    btn.innerHTML=orig;
+    alert("Não consegui enviar pro Notion.\n\nMotivo: "+e.message+"\n\nConfira:\n1) A janela \"Ponte Notion\" está aberta? (abra com o \"ABRIR TUDO (painel + notion).bat\")\n2) Você colou seu token e o link da database no notion-config.json e salvou?\n3) Você compartilhou a database com a sua integração no Notion?\n\nPasso a passo: NOTION-COMO-CONECTAR.md");
+  }
+}
 
 /* ---------- conexão ---------- */
 async function checkConnection(){
@@ -673,9 +700,9 @@ $("#toggleTheme").onclick=()=>{settings.theme=settings.theme==="dark"?"light":"d
 document.querySelectorAll(".modal-bg").forEach(mb=>mb.addEventListener("click",e=>{if(e.target===mb)mb.classList.remove("show")}));
 
 /* settings */
-$("#openSettings").onclick=()=>{$("#setUrl").value=settings.url;$("#setBrand").value=settings.brand||"";$("#setTemp").value=settings.temp;$("#tempVal").textContent=settings.temp;populateModels();$("#settingsModal").classList.add("show")};
+$("#openSettings").onclick=()=>{$("#setUrl").value=settings.url;$("#setBrand").value=settings.brand||"";$("#setNotion").value=settings.notionBridge||"http://localhost:3333";$("#setTemp").value=settings.temp;$("#tempVal").textContent=settings.temp;populateModels();$("#settingsModal").classList.add("show")};
 $("#setTemp").addEventListener("input",e=>$("#tempVal").textContent=e.target.value);
-$("#saveSettings").onclick=()=>{settings.url=$("#setUrl").value.trim()||"http://localhost:11434";settings.model=$("#setModel").value;settings.temp=Number($("#setTemp").value);settings.brand=$("#setBrand").value.trim();save(K.settings,settings);$("#brandName").textContent=settings.brand||"Diretora Sênior IA";$("#settingsModal").classList.remove("show");checkConnection()};
+$("#saveSettings").onclick=()=>{settings.url=$("#setUrl").value.trim()||"http://localhost:11434";settings.model=$("#setModel").value;settings.temp=Number($("#setTemp").value);settings.brand=$("#setBrand").value.trim();settings.notionBridge=$("#setNotion").value.trim()||"http://localhost:3333";save(K.settings,settings);$("#brandName").textContent=settings.brand||"Diretora Sênior IA";$("#settingsModal").classList.remove("show");checkConnection()};
 $("#testConn").onclick=async()=>{const r=$("#testResult");r.style.color="var(--muted)";r.textContent="Testando…";const old=settings.url;settings.url=$("#setUrl").value.trim();const m=await checkConnection();settings.url=old;if(m){r.style.color="var(--good)";r.textContent="✓ Conectado! Modelos: "+(m.join(", ")||"nenhum");populateModels()}else{r.style.color="var(--bad)";r.textContent="✗ Não conectou. Abra o Ollama e use o ABRIR PAINEL.bat."}};
 $("#exportData").onclick=()=>downloadFile("backup-painel-ia.json",JSON.stringify({clients,convos,savedItems,settings,v:2},null,2),"application/json");
 $("#importData").onclick=()=>$("#importFile").click();
