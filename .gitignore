@@ -2,6 +2,10 @@
 *.env
 .env
 notion-config.json
+server-config.json
+users.json
+sessions.json
+cloudflared.exe
 backup-painel-ia.json
 *.log
 .DS_Store

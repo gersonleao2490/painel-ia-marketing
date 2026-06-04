@@ -279,6 +279,7 @@
       </div>
     </div>
     <div class="modal-foot">
+      <button class="btn" id="logoutBtn" style="display:none">🚪 Sair da conta</button>
       <button class="btn" id="testConn">Testar conexão</button>
       <button class="btn primary" id="saveSettings">Salvar</button>
     </div>
@@ -409,6 +410,20 @@
       <button class="btn sm" id="checkReset">↺ Modelo padrão</button>
     </div>
     <div id="checklistList"></div>
+  </div>
+</div>
+
+<!-- Login (aparece só quando aberto pelo servidor seguro) -->
+<div id="authOverlay" style="display:none;position:fixed;inset:0;z-index:100;background:var(--bg);align-items:center;justify-content:center;padding:20px">
+  <div style="width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px">
+    <h1 style="font-size:18px;margin:0 0 4px;display:flex;align-items:center;gap:9px"><span class="logo">📈</span> Painel IA de Marketing</h1>
+    <p style="color:var(--muted);font-size:12.5px;margin:0 0 18px">Acesso restrito — só pessoal autorizado.</p>
+    <div class="field"><label>Usuário</label><input id="auUser" autocomplete="username" /></div>
+    <div class="field"><label>Senha</label><input id="auPass" type="password" autocomplete="current-password" /></div>
+    <div class="field" id="auCodeWrap" style="display:none"><label>Código de convite</label><input id="auCode" placeholder="peça a quem te autorizou" /></div>
+    <button class="btn primary" id="auSubmit" style="width:100%;justify-content:center;margin-top:4px">Entrar</button>
+    <div class="test-line" id="auMsg" style="text-align:center"></div>
+    <div style="text-align:center;margin-top:10px;font-size:12.5px"><a href="#" id="auToggle" style="color:var(--accent2)">Não tem conta? Criar conta</a></div>
   </div>
 </div>
 
@@ -545,6 +560,9 @@ let hooks=load(K.hooks,[]);
 let checklist=load(K.checklist,{});
 let currentId=load(K.cur,null);
 let currentMode="geral", streaming=false, abortCtl=null, pendingImage=null;
+let serverMode=false, authUser=null, authIsRegister=false;
+function ollamaBase(){return serverMode?"":(settings.url||"http://localhost:11434").replace(/\/$/,"")}
+function notionBase(){return serverMode?"":(settings.notionBridge||"http://localhost:3333").replace(/\/$/,"")}
 
 /* seed na 1ª vez */
 if(!clients){
@@ -725,7 +743,7 @@ async function streamAssistant(convo){
   const payload={model,stream:true,options:{temperature:Number(settings.temp)},messages:[{role:"system",content:buildSystem()},...convo.messages.map(m=>{const o={role:m.role,content:m.content};if(m.images&&m.images.length)o.images=m.images;return o})]};
   streaming=true;setSendStop(true);abortCtl=new AbortController();let acc="";
   try{
-    const res=await fetch(settings.url.replace(/\/$/,"")+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:abortCtl.signal});
+    const res=await fetch(ollamaBase()+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:abortCtl.signal});
     if(!res.ok)throw new Error("HTTP "+res.status);
     const reader=res.body.getReader();const dec=new TextDecoder();let buf="";
     while(true){const{done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const parts=buf.split("\n");buf=parts.pop();
@@ -770,7 +788,7 @@ function parseTable(md){
 async function sendToNotion(md,btn){
   const items=parseTable(md);
   if(!items.length){alert("Não encontrei uma tabela de calendário nesta resposta. Use o especialista 🗓️ Calendário Editorial.");return}
-  const url=(settings.notionBridge||"http://localhost:3333").replace(/\/$/,"")+"/notion";
+  const url=notionBase()+"/notion";
   const orig=btn.innerHTML;btn.innerHTML="⏳ Enviando "+items.length+"…";
   try{
     const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items})});
@@ -788,7 +806,7 @@ async function sendToNotion(md,btn){
 /* ---------- conexão ---------- */
 async function checkConnection(){
   const dots=[$("#dot1")];
-  try{const r=await fetch(settings.url.replace(/\/$/,"")+"/api/tags");if(!r.ok)throw 0;const j=await r.json();const models=(j.models||[]).map(m=>m.name);dots.forEach(d=>d.className="dot on");$("#statusText").textContent="Conectada • "+(settings.model);return models}
+  try{const r=await fetch(ollamaBase()+"/api/tags");if(!r.ok)throw 0;const j=await r.json();const models=(j.models||[]).map(m=>m.name);dots.forEach(d=>d.className="dot on");$("#statusText").textContent="Conectada • "+(settings.model);return models}
   catch(e){dots.forEach(d=>d.className="dot off");$("#statusText").textContent="Ollama desconectado";return null}
 }
 async function populateModels(){const sel=$("#setModel");const models=await checkConnection();sel.innerHTML="";const list=models&&models.length?models:[settings.model];list.forEach(m=>{const o=document.createElement("option");o.value=m;o.textContent=m;if(m===settings.model)o.selected=true;sel.appendChild(o)});if(models&&!models.includes(settings.model)){const o=document.createElement("option");o.value=settings.model;o.textContent=settings.model+" (não baixado)";o.selected=true;sel.appendChild(o)}}
@@ -943,12 +961,12 @@ $("#toggleTheme").onclick=()=>{settings.theme=settings.theme==="dark"?"light":"d
 document.querySelectorAll(".modal-bg").forEach(mb=>mb.addEventListener("click",e=>{if(e.target===mb)mb.classList.remove("show")}));
 
 /* settings */
-$("#openSettings").onclick=()=>{$("#setUrl").value=settings.url;$("#setBrand").value=settings.brand||"";$("#setVision").value=settings.visionModel||"llava";$("#setNotion").value=settings.notionBridge||"http://localhost:3333";$("#setTemp").value=settings.temp;$("#tempVal").textContent=settings.temp;populateModels();$("#settingsModal").classList.add("show")};
+$("#openSettings").onclick=()=>{$("#setUrl").value=settings.url;$("#setBrand").value=settings.brand||"";$("#setVision").value=settings.visionModel||"llava";$("#setNotion").value=settings.notionBridge||"http://localhost:3333";$("#setTemp").value=settings.temp;$("#tempVal").textContent=settings.temp;$("#logoutBtn").style.display=serverMode?"inline-flex":"none";populateModels();$("#settingsModal").classList.add("show")};
 $("#setTemp").addEventListener("input",e=>$("#tempVal").textContent=e.target.value);
 $("#saveSettings").onclick=()=>{settings.url=$("#setUrl").value.trim()||"http://localhost:11434";settings.model=$("#setModel").value;settings.visionModel=$("#setVision").value.trim()||"llava";settings.temp=Number($("#setTemp").value);settings.brand=$("#setBrand").value.trim();settings.notionBridge=$("#setNotion").value.trim()||"http://localhost:3333";save(K.settings,settings);$("#brandName").textContent=settings.brand||"Diretora Sênior IA";$("#settingsModal").classList.remove("show");checkConnection()};
 $("#saveNotion").onclick=async()=>{
   const token=$("#setNotionToken").value.trim(),db=$("#setNotionDb").value.trim();
-  const base=($("#setNotion").value.trim()||"http://localhost:3333").replace(/\/$/,"");
+  const base=serverMode?"":($("#setNotion").value.trim()||"http://localhost:3333").replace(/\/$/,"");
   const r=$("#notionResult");
   if(!token||!db){r.style.color="var(--bad)";r.textContent="Preencha o token e o link da database.";return}
   r.style.color="var(--muted)";r.textContent="Salvando…";
@@ -1002,7 +1020,33 @@ document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="k"){
 (function(s){const x=document.createElement("script");x.src=s;document.head.appendChild(x)})("https://cdn.jsdelivr.net/npm/marked/marked.min.js");
 (function(s){const x=document.createElement("script");x.src=s;document.head.appendChild(x)})("https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js");
 
+/* login / acesso remoto */
+function showAuth(){$("#authOverlay").style.display="flex"}
+function hideAuth(){$("#authOverlay").style.display="none"}
+async function initAuth(){
+  try{
+    const r=await fetch("/auth/me",{cache:"no-store"});
+    if(r.status===404){serverMode=false;return}
+    serverMode=true;
+    if(r.ok){const j=await r.json();authUser=j.user;hideAuth();}else{showAuth();}
+  }catch(e){serverMode=false;}
+}
+$("#auToggle").onclick=e=>{e.preventDefault();authIsRegister=!authIsRegister;$("#auCodeWrap").style.display=authIsRegister?"block":"none";$("#auSubmit").textContent=authIsRegister?"Criar conta":"Entrar";$("#auToggle").textContent=authIsRegister?"Já tenho conta — entrar":"Não tem conta? Criar conta";$("#auMsg").textContent="";};
+$("#auSubmit").onclick=async()=>{
+  const username=$("#auUser").value.trim(),password=$("#auPass").value,code=$("#auCode").value.trim();
+  const msg=$("#auMsg");if(!username||!password){msg.style.color="var(--bad)";msg.textContent="Preencha usuário e senha.";return}
+  msg.style.color="var(--muted)";msg.textContent="…";
+  try{
+    const r=await fetch(authIsRegister?"/auth/register":"/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(authIsRegister?{username,password,code}:{username,password})});
+    const j=await r.json();if(!r.ok)throw new Error(j.error||"falhou");
+    msg.style.color="var(--good)";msg.textContent="✓ entrando…";setTimeout(()=>location.reload(),300);
+  }catch(e){msg.style.color="var(--bad)";msg.textContent="✗ "+e.message;}
+};
+["auUser","auPass","auCode"].forEach(id=>$("#"+id).addEventListener("keydown",e=>{if(e.key==="Enter")$("#auSubmit").click()}));
+$("#logoutBtn").onclick=async()=>{try{await fetch("/auth/logout",{method:"POST"})}catch(e){}location.reload()};
+
 /* init */
+initAuth();
 applyTheme();
 $("#brandName").textContent=settings.brand||"Diretora Sênior IA";
 renderClients();renderModes();renderConvos();

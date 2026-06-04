@@ -6,12 +6,13 @@ Sua IA de marketing rodando **100% no seu computador, de graça**, com o modelo 
 
 ## ▶️ Como abrir (super fácil — sem terminal)
 
-Dê **dois cliques no ícone "Painel IA de Marketing"** que está na sua **Área de Trabalho**. 🖱️
+Dê **dois cliques no ícone "Painel IA de Marketing"** (Área de Trabalho). 🖱️ Ele liga tudo sozinho, sem janela preta.
 
-Pronto — ele liga tudo sozinho (Ollama + painel + Notion), **sem nenhuma janela preta**, e abre no navegador. (Se na 1ª vez aparecer erro, aperte **F5**.)
+🔐 **Agora tem login.** Na 1ª vez, clique em **"Criar conta"** e use o **código de convite `D47FF2FC`** (você vira admin). Depois é só usuário + senha.
 
-> Não tem o ícone? Dê dois cliques em **`ABRIR-PAINEL.vbs`** (nesta pasta) — faz a mesma coisa.
-> A bolinha **verde** no canto = conectada e pronta.
+📱 **Abrir no celular/outro PC:** dois cliques em **`ABRIR-ONLINE.bat`** → ele mostra um link `https://…trycloudflare.com` → abra no celular e faça login. Detalhes e avisos em **ACESSO-DE-QUALQUER-LUGAR.md**.
+
+> A bolinha **verde** = conectada e pronta. (Se a 1ª vez der erro, aperte **F5**.)
 
 ---
 
