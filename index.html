@@ -213,6 +213,8 @@
       <div class="spacer"></div>
       <div class="tools">
         <button class="btn sm" id="openCrm">👥 <span class="label-txt">CRM</span></button>
+        <button class="btn sm" id="openChecklist">✅ <span class="label-txt">Campanha</span></button>
+        <button class="btn sm" id="openHooks">🧲 <span class="label-txt">Ganchos</span></button>
         <button class="btn sm" id="openTemplates">🗂️ <span class="label-txt">Templates</span></button>
         <button class="btn sm" id="openMemory">🧠 <span class="label-txt">Memória</span></button>
         <button class="btn sm" id="toggleTheme" title="Tema claro/escuro">🌙</button>
@@ -345,6 +347,8 @@
     <div class="desc">Gerencie seus criadores por cliente: calcula <b>taxa de engajamento</b> e <b>ROI</b> sozinho. Tudo salvo no seu PC.</div>
     <div style="display:flex;gap:9px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <button class="btn sm primary" id="crmAddBtn">＋ Adicionar influenciador</button>
+      <button class="btn sm" id="crmCsv">⬇️ CSV</button>
+      <button class="btn sm" id="crmPdf">🖨️ PDF</button>
       <span id="crmSummary" style="font-size:12px;color:var(--muted)"></span>
     </div>
     <div id="crmForm" style="display:none;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px">
@@ -377,6 +381,34 @@
       </div>
     </div>
     <div id="crmList"></div>
+  </div>
+</div>
+
+<!-- Banco de Ganchos -->
+<div class="modal-bg" id="hooksModal">
+  <div class="modal">
+    <h3>🧲 Banco de Ganchos</h3>
+    <div class="desc">Guarde os ganchos (primeiras frases) que funcionam e reaproveite. Salvo no seu PC.</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <input id="hookInput" class="search" style="flex:1;min-width:220px;margin:0" placeholder="Escreva ou cole um gancho…" />
+      <button class="btn sm primary" id="hookAdd">＋ Salvar</button>
+      <button class="btn sm" id="hookGen">🤖 Gerar 10 com IA</button>
+    </div>
+    <div id="hooksList"></div>
+  </div>
+</div>
+
+<!-- Checklist de Campanha -->
+<div class="modal-bg" id="checklistModal">
+  <div class="modal">
+    <h3>✅ Checklist de Campanha <span id="checkClientName" style="color:var(--muted);font-weight:400;font-size:13px"></span></h3>
+    <div class="desc">Do briefing ao ROI — acompanhe cada etapa da campanha. Por cliente, salvo no seu PC.</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <input id="checkInput" class="search" style="flex:1;min-width:220px;margin:0" placeholder="Adicionar etapa…" />
+      <button class="btn sm primary" id="checkAdd">＋ Adicionar</button>
+      <button class="btn sm" id="checkReset">↺ Modelo padrão</button>
+    </div>
+    <div id="checklistList"></div>
   </div>
 </div>
 
@@ -468,6 +500,8 @@ const TEMPLATES = {
   "Influência":[
     ["Briefing de influencer","Crie um briefing de alta conversão para um influenciador divulgar meu produto.","influencer"],
     ["DM de abordagem","Escreva uma DM profissional para iniciar parceria com um criador.","influencer"],
+    ["Briefing de gravação","Crie um briefing de gravação para o influenciador: objetivo, roteiro (Problema→Solução→Produto), pontos obrigatórios, CTA e o que NÃO fazer.","influencer"],
+    ["Contrato de parceria (rascunho)","Crie um rascunho de contrato de parceria com influenciador (escopo, entregas, prazos, valores, direito de imagem, exclusividade). Aviso: é um rascunho, não aconselhamento jurídico.","proposta"],
   ],
   "E-mail / CRM":[
     ["Boas-vindas (5 e-mails)","Crie uma sequência de 5 e-mails de boas-vindas com copy pronta.","email"],
@@ -496,7 +530,7 @@ const EXAMPLE_MEMORY = {
 };
 
 /* ---------- DB (banco local) ---------- */
-const K={clients:"pim2_clients",active:"pim2_active",convos:"pim2_convos",settings:"pim2_settings",saved:"pim2_saved",cur:"pim2_cur",crm:"pim2_crm"};
+const K={clients:"pim2_clients",active:"pim2_active",convos:"pim2_convos",settings:"pim2_settings",saved:"pim2_saved",cur:"pim2_cur",crm:"pim2_crm",hooks:"pim2_hooks",checklist:"pim2_checklist"};
 function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){console.warn("Armazenamento cheio?",e)}}
 function uid(){return Date.now()+"-"+Math.random().toString(36).slice(2,7)}
@@ -507,6 +541,8 @@ let activeClient=load(K.active,null);
 let convos=load(K.convos,[]);
 let savedItems=load(K.saved,[]);
 let crm=load(K.crm,[]);
+let hooks=load(K.hooks,[]);
+let checklist=load(K.checklist,{});
 let currentId=load(K.cur,null);
 let currentMode="geral", streaming=false, abortCtl=null, pendingImage=null;
 
@@ -592,7 +628,7 @@ function renderMessages(){
   const convo=getConvo();messagesEl.innerHTML="";
   if(!convo||convo.messages.length===0){
     const m=MODES[currentMode];const w=document.createElement("div");w.className="welcome";
-    w.innerHTML=`<h2>${m.icon} ${m.title}</h2><p>${m.sub}<br>Cliente ativo: <b>${escapeHtml(getClient().memory.name||"—")}</b>. Memória preenchida = respostas sob medida. Comece por uma sugestão:</p>`;
+    w.innerHTML=`<h2>${m.icon} ${m.title}</h2>`+statsHtml()+`<p>${m.sub}<br>Cliente ativo: <b>${escapeHtml(getClient().memory.name||"—")}</b>. Memória preenchida = respostas sob medida. Comece por uma sugestão:</p>`;
     const ch=document.createElement("div");ch.className="chips";
     m.chips.forEach(t=>{const c=document.createElement("button");c.className="chip";c.textContent=t;c.onclick=()=>{inputEl.value=t;autoGrow();inputEl.focus()};ch.appendChild(c)});
     w.appendChild(ch);messagesEl.appendChild(w);return;
@@ -815,6 +851,62 @@ function crmAnalyze(i){
   $("#crmModal").classList.remove("show");currentId=null;save(K.cur,null);renderMessages();inputEl.value=txt;autoGrow();sendMessage();
 }
 
+function crmExportCsv(){
+  const list=crmOf();if(!list.length){alert("Sem influenciadores para exportar.");return}
+  const head=["Nome","@","Nicho","Seguidores","Engajamento%","Status","Cache","Custo","Vendas","ROI%","Lucro","Contato"];
+  const rows=[head.join(",")];
+  list.forEach(i=>{const er=engRate(i),r=roiCalc(i);rows.push([i.nome,i.arroba,i.nicho,i.seguidores,er==null?"":er.toFixed(2),i.status,i.cache,i.custo,i.vendas,r.roi==null?"":r.roi.toFixed(0),r.lucro,i.contato].map(c=>'"'+String(c==null?"":c).replace(/"/g,'""')+'"').join(","))});
+  downloadFile("crm-influenciadores.csv","﻿"+rows.join("\n"),"text/csv;charset=utf-8");
+}
+function crmExportPdf(){
+  const list=crmOf();if(!list.length){alert("Sem influenciadores.");return}
+  let md="# CRM de Influenciadores — "+(getClient().memory.name||"")+"\n\n| Influenciador | Nicho | Seguidores | Eng. | Status | Vendas | ROI | Lucro |\n|---|---|---|---|---|---|---|---|\n";
+  list.forEach(i=>{const er=engRate(i),r=roiCalc(i);md+="| "+(i.nome||"")+" "+(i.arroba||"")+" | "+(i.nicho||"")+" | "+((Number(i.seguidores)||0).toLocaleString("pt-BR"))+" | "+(er==null?"—":er.toFixed(2)+"%")+" | "+(i.status||"")+" | "+fmtMoney(i.vendas)+" | "+(r.roi==null?"—":r.roi.toFixed(0)+"%")+" | "+fmtMoney(r.lucro)+" |\n"});
+  printResponse(md);
+}
+
+/* ---------- Dashboard (início) ---------- */
+function statsHtml(){
+  const cli=clients.length;
+  const conv=convos.filter(c=>c.clientId===activeClient).length;
+  const infl=crmOf();
+  const vendas=infl.reduce((a,i)=>a+(Number(i.vendas)||0),0);
+  const inv=infl.reduce((a,i)=>a+roiCalc(i).inv,0);
+  const roi=inv?(((vendas-inv)/inv)*100).toFixed(0)+"%":"—";
+  const card=(label,val)=>`<div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 14px;min-width:108px;flex:1"><div style="font-size:19px;font-weight:700">${val}</div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">${label}</div></div>`;
+  return `<div style="display:flex;gap:9px;flex-wrap:wrap;margin:6px 0 16px">${card("Clientes",cli)}${card("Conversas",conv)}${card("Influenciadores",infl.length)}${card("Vendas (CRM)",fmtMoney(vendas))}${card("ROI geral",roi)}</div>`;
+}
+
+/* ---------- Banco de Ganchos ---------- */
+function openHooks(){renderHooks();$("#hooksModal").classList.add("show")}
+function renderHooks(){
+  const box=$("#hooksList");box.innerHTML="";
+  if(!hooks.length){box.innerHTML='<div style="color:var(--muted);font-size:13px">Nenhum gancho salvo ainda.</div>';return}
+  hooks.forEach(h=>{const d=document.createElement("div");d.className="saved-item";
+    d.innerHTML='<span class="rm" title="Remover">✕</span>'+escapeHtml(h.text);
+    const copy=document.createElement("button");copy.className="act";copy.style.marginTop="8px";copy.innerHTML="📋 Copiar";
+    copy.onclick=()=>{navigator.clipboard.writeText(h.text);copy.innerHTML="✓ Copiado";setTimeout(()=>copy.innerHTML="📋 Copiar",1200)};
+    d.appendChild(document.createElement("br"));d.appendChild(copy);
+    d.querySelector(".rm").onclick=()=>{hooks=hooks.filter(x=>x.id!==h.id);save(K.hooks,hooks);renderHooks()};
+    box.appendChild(d)});
+}
+
+/* ---------- Checklist de Campanha ---------- */
+const CHECK_DEFAULT=["Briefing enviado","Roteiro aprovado","Conteúdo gravado","Conteúdo revisado e aprovado","Link/cupom de rastreio criado","Publicado","Métricas acompanhadas (cliques/vendas)","ROI calculado","Decisão: escalar ou pausar"];
+function openChecklist(){$("#checkClientName").textContent="— "+(getClient().memory.name||"");if(!checklist[activeClient]||!checklist[activeClient].length)checklist[activeClient]=CHECK_DEFAULT.map(t=>({text:t,done:false}));renderChecklist();$("#checklistModal").classList.add("show")}
+function renderChecklist(){
+  const box=$("#checklistList");box.innerHTML="";const items=checklist[activeClient]||[];
+  const done=items.filter(i=>i.done).length;
+  const bar=document.createElement("div");bar.style.cssText="font-size:12px;color:var(--accent2);margin-bottom:10px;font-weight:600";bar.textContent="Progresso: "+done+"/"+items.length;box.appendChild(bar);
+  items.forEach((it,idx)=>{const d=document.createElement("div");d.style.cssText="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)";
+    const cb=document.createElement("input");cb.type="checkbox";cb.checked=!!it.done;cb.style.cssText="width:18px;height:18px;cursor:pointer;flex:none";
+    const sp=document.createElement("span");sp.style.cssText="flex:1;font-size:13.5px"+(it.done?";text-decoration:line-through;color:var(--muted)":"");sp.textContent=it.text;
+    const rm=document.createElement("span");rm.textContent="✕";rm.style.cssText="cursor:pointer;color:var(--muted)";
+    cb.onchange=()=>{it.done=cb.checked;save(K.checklist,checklist);renderChecklist()};
+    rm.onclick=()=>{items.splice(idx,1);save(K.checklist,checklist);renderChecklist()};
+    d.appendChild(cb);d.appendChild(sp);d.appendChild(rm);box.appendChild(d)});
+}
+
 /* ---------- tema ---------- */
 function applyTheme(){document.documentElement.setAttribute("data-theme",settings.theme);$("#toggleTheme").textContent=settings.theme==="dark"?"🌙":"☀️"}
 
@@ -837,6 +929,16 @@ $("#openCrm").onclick=openCrm;
 $("#crmAddBtn").onclick=()=>crmFormShow(null);
 $("#crmCancel").onclick=()=>$("#crmForm").style.display="none";
 $("#crmSave").onclick=crmSave;
+$("#crmCsv").onclick=crmExportCsv;
+$("#crmPdf").onclick=crmExportPdf;
+$("#openHooks").onclick=openHooks;
+$("#hookAdd").onclick=()=>{const v=$("#hookInput").value.trim();if(!v)return;hooks.unshift({id:uid(),text:v});save(K.hooks,hooks);$("#hookInput").value="";renderHooks()};
+$("#hookInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("#hookAdd").click()});
+$("#hookGen").onclick=()=>{currentMode="social";renderModes();$("#headTitle").textContent=MODES.social.title;$("#headSub").textContent=MODES.social.sub;$("#hooksModal").classList.remove("show");currentId=null;save(K.cur,null);renderMessages();inputEl.value="Me dê 10 ganchos (primeira frase) de altíssima retenção para o meu nicho, prontos para usar.";autoGrow();sendMessage()};
+$("#openChecklist").onclick=openChecklist;
+$("#checkAdd").onclick=()=>{const v=$("#checkInput").value.trim();if(!v)return;if(!checklist[activeClient])checklist[activeClient]=[];checklist[activeClient].push({text:v,done:false});save(K.checklist,checklist);$("#checkInput").value="";renderChecklist()};
+$("#checkInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("#checkAdd").click()});
+$("#checkReset").onclick=()=>{if(confirm("Restaurar o checklist padrão deste cliente?")){checklist[activeClient]=CHECK_DEFAULT.map(t=>({text:t,done:false}));save(K.checklist,checklist);renderChecklist()}};
 $("#toggleTheme").onclick=()=>{settings.theme=settings.theme==="dark"?"light":"dark";save(K.settings,settings);applyTheme()};
 document.querySelectorAll(".modal-bg").forEach(mb=>mb.addEventListener("click",e=>{if(e.target===mb)mb.classList.remove("show")}));
 
@@ -860,9 +962,9 @@ $("#saveNotion").onclick=async()=>{
   }catch(e){r.style.color="var(--bad)";r.textContent="✗ "+e.message.slice(0,80)+" — a janela da Ponte está aberta? Use o atalho do painel.";}
 };
 $("#testConn").onclick=async()=>{const r=$("#testResult");r.style.color="var(--muted)";r.textContent="Testando…";const old=settings.url;settings.url=$("#setUrl").value.trim();const m=await checkConnection();settings.url=old;if(m){r.style.color="var(--good)";r.textContent="✓ Conectado! Modelos: "+(m.join(", ")||"nenhum");populateModels()}else{r.style.color="var(--bad)";r.textContent="✗ Não conectou. Abra o Ollama e use o ABRIR PAINEL.bat."}};
-$("#exportData").onclick=()=>downloadFile("backup-painel-ia.json",JSON.stringify({clients,convos,savedItems,crm,settings,v:2},null,2),"application/json");
+$("#exportData").onclick=()=>downloadFile("backup-painel-ia.json",JSON.stringify({clients,convos,savedItems,crm,hooks,checklist,settings,v:2},null,2),"application/json");
 $("#importData").onclick=()=>$("#importFile").click();
-$("#importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);if(d.clients){clients=d.clients;save(K.clients,clients)}if(d.convos){convos=d.convos;save(K.convos,convos)}if(d.savedItems){savedItems=d.savedItems;save(K.saved,savedItems)}if(d.crm){crm=d.crm;save(K.crm,crm)}if(d.settings){settings=Object.assign(settings,d.settings);save(K.settings,settings)}activeClient=clients[0]?.id;save(K.active,activeClient);alert("Backup importado com sucesso!");location.reload()}catch(x){alert("Arquivo inválido.")}};rd.readAsText(f)};
+$("#importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);if(d.clients){clients=d.clients;save(K.clients,clients)}if(d.convos){convos=d.convos;save(K.convos,convos)}if(d.savedItems){savedItems=d.savedItems;save(K.saved,savedItems)}if(d.crm){crm=d.crm;save(K.crm,crm)}if(d.hooks){hooks=d.hooks;save(K.hooks,hooks)}if(d.checklist){checklist=d.checklist;save(K.checklist,checklist)}if(d.settings){settings=Object.assign(settings,d.settings);save(K.settings,settings)}activeClient=clients[0]?.id;save(K.active,activeClient);alert("Backup importado com sucesso!");location.reload()}catch(x){alert("Arquivo inválido.")}};rd.readAsText(f)};
 
 /* voz */
 let recog=null;

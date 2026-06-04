@@ -33,9 +33,13 @@ Diretora de Marketing · Social Media · Influencer · SEO & Conversão · Estra
 Clique no especialista **antes** de perguntar.
 
 ## 🧰 Outras ferramentas
+- **🏠 Início (dashboard)** — ao abrir, mostra seus números: clientes, conversas, influenciadores, vendas e ROI geral.
+- **✅ Campanha** — checklist da campanha (do briefing ao ROI), por cliente.
+- **🧲 Ganchos** — banco de ganchos virais pra salvar e reaproveitar (e gerar 10 com IA).
+- **👥 CRM** — agora exporta em **CSV** e **PDF** (relatório dos influenciadores).
 - **🖨️ PDF** — em qualquer resposta, botão para **salvar como PDF** (entregar pro cliente).
-- **📎 Analisar imagem** — anexe um print de perfil/criativo e a IA comenta. Precisa instalar 1 vez o modelo de visão: no terminal rode **`ollama pull llava`** (depois é só usar).
-- **🗂️ Templates** — agora com Comparar concorrentes, 20 ganchos virais e Proposta de orçamento.
+- **📎 Analisar imagem** — anexe um print de perfil/criativo e a IA comenta. Precisa instalar 1 vez o modelo de visão: no terminal rode **`ollama pull llava`**.
+- **🗂️ Templates** — com Comparar concorrentes, 20 ganchos, Proposta de orçamento, Contrato e Briefing de gravação.
 
 ## 👥 CRM de Influenciadores
 No topo, botão **👥 CRM**: cadastre seus criadores por cliente. Ele calcula sozinho a **taxa de engajamento** e o **ROI** (lucro), e tem o botão **🤖 Analisar com IA** que manda os dados pro especialista de influência te dar o parecer.
