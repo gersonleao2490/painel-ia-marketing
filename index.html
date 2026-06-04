@@ -212,6 +212,7 @@
       </div>
       <div class="spacer"></div>
       <div class="tools">
+        <button class="btn sm" id="openCrm">👥 <span class="label-txt">CRM</span></button>
         <button class="btn sm" id="openTemplates">🗂️ <span class="label-txt">Templates</span></button>
         <button class="btn sm" id="openMemory">🧠 <span class="label-txt">Memória</span></button>
         <button class="btn sm" id="toggleTheme" title="Tema claro/escuro">🌙</button>
@@ -329,6 +330,48 @@
   </div>
 </div>
 
+<!-- CRM Influenciadores -->
+<div class="modal-bg" id="crmModal">
+  <div class="modal wide">
+    <h3>👥 CRM de Influenciadores <span id="crmClientName" style="color:var(--muted);font-weight:400;font-size:13px"></span></h3>
+    <div class="desc">Gerencie seus criadores por cliente: calcula <b>taxa de engajamento</b> e <b>ROI</b> sozinho. Tudo salvo no seu PC.</div>
+    <div style="display:flex;gap:9px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <button class="btn sm primary" id="crmAddBtn">＋ Adicionar influenciador</button>
+      <span id="crmSummary" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <div id="crmForm" style="display:none;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px">
+      <input type="hidden" id="crm_id" />
+      <div class="grid2">
+        <div class="field"><label>Nome</label><input id="crm_nome" /></div>
+        <div class="field"><label>@ / perfil</label><input id="crm_arroba" placeholder="@usuario" /></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Seguidores</label><input id="crm_seguidores" type="number" /></div>
+        <div class="field"><label>Nicho</label><input id="crm_nicho" /></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Média de curtidas</label><input id="crm_likes" type="number" /></div>
+        <div class="field"><label>Média de comentários</label><input id="crm_coments" type="number" /></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Status</label><select id="crm_status"><option>Prospect</option><option>Negociando</option><option>Ativo</option><option>Pausado</option><option>Encerrado</option></select></div>
+        <div class="field"><label>Contato (email/WhatsApp)</label><input id="crm_contato" /></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Cachê pago (R$)</label><input id="crm_cache" type="number" /></div>
+        <div class="field"><label>Custo de produto/envio (R$)</label><input id="crm_custo" type="number" /></div>
+      </div>
+      <div class="field"><label>Vendas geradas por ele (R$)</label><input id="crm_vendas" type="number" /></div>
+      <div class="field"><label>Observações</label><textarea id="crm_obs"></textarea></div>
+      <div class="modal-foot">
+        <button class="btn" id="crmCancel">Cancelar</button>
+        <button class="btn primary" id="crmSave">Salvar</button>
+      </div>
+    </div>
+    <div id="crmList"></div>
+  </div>
+</div>
+
 <script>
 /* ===========================================================================
    PAINEL IA DE MARKETING — Diretora Sênior  (v2)
@@ -380,6 +423,9 @@ const MODES = {
   roteiro:{icon:"🎬",title:"Roteirista de Vídeo",sub:"Roteiros completos prontos para gravar.",
     addon:"FOCO: roteiros de vídeo curtos prontos para gravar. Entregue GANCHO (0-3s, falado, na íntegra), DESENVOLVIMENTO (falas + cena/ação por bloco com tempo aproximado), VIRADA/CLÍMAX e CTA final. Inclua texto na tela, b-roll e duração total. Escreva as falas exatas — a pessoa precisa só ler e gravar.",
     chips:["Escreva um roteiro de Reel de 30s pronto para gravar do meu produto","Roteiro \"mito x verdade\" sobre o meu nicho","Roteiro de story-time que termina vendendo meu serviço"]},
+  copywriter:{icon:"✍️",title:"Copywriter",sub:"Textos que vendem: headlines, bios, legendas, e-mails.",
+    addon:"FOCO: copywriting de resposta direta. Use frameworks (AIDA; PAS = Problema/Agitação/Solução; 4 Ps). Entregue o texto PRONTO para copiar e sempre traga variações para teste (ex: 5-10 headlines, 3 CTAs). Use gatilhos mentais com naturalidade (prova social, escassez, autoridade, reciprocidade) — sem soar apelão. Adapte ao tom de voz da empresa.",
+    chips:["Escreva 10 headlines para a minha oferta principal","Crie uma legenda que vende (com gatilho mental) para o meu produto","Reescreva este texto pra converter mais: \"compre já\""]},
   anuncios:{icon:"📣",title:"Tráfego Pago & Anúncios",sub:"Copy de anúncio para Meta e TikTok Ads.",
     addon:"FOCO: tráfego pago (Meta Ads/TikTok Ads). Entregue ângulos de campanha, públicos sugeridos, e a COPY do anúncio pronta: gancho, corpo (dor→agitação→solução), prova, oferta e CTA. Traga 3 variações para teste A/B, sugestões de criativo (o que mostrar no vídeo/imagem) e a estrutura de funil (topo/retargeting). Pense em CPA, ROAS e escala.",
     chips:["Crie 3 variações de anúncio (copy) para o meu produto no Instagram","Estruture uma campanha de tráfego do zero para vender meu serviço","Sugira públicos e ângulos de teste para Meta Ads"]},
@@ -437,7 +483,7 @@ const EXAMPLE_MEMORY = {
 };
 
 /* ---------- DB (banco local) ---------- */
-const K={clients:"pim2_clients",active:"pim2_active",convos:"pim2_convos",settings:"pim2_settings",saved:"pim2_saved",cur:"pim2_cur"};
+const K={clients:"pim2_clients",active:"pim2_active",convos:"pim2_convos",settings:"pim2_settings",saved:"pim2_saved",cur:"pim2_cur",crm:"pim2_crm"};
 function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
 function uid(){return Date.now()+"-"+Math.random().toString(36).slice(2,7)}
@@ -447,6 +493,7 @@ let clients=load(K.clients,null);
 let activeClient=load(K.active,null);
 let convos=load(K.convos,[]);
 let savedItems=load(K.saved,[]);
+let crm=load(K.crm,[]);
 let currentId=load(K.cur,null);
 let currentMode="geral", streaming=false, abortCtl=null;
 
@@ -688,6 +735,55 @@ function saveMemoryFromModal(){const c=getClient();MF.forEach(f=>{const el=$("#m
 function openTemplates(){const box=$("#tplList");box.innerHTML="";Object.entries(TEMPLATES).forEach(([cat,items])=>{const h=document.createElement("div");h.className="tpl-cat";h.textContent=cat;box.appendChild(h);items.forEach(([t,p,mode])=>{const b=document.createElement("button");b.className="tpl";b.innerHTML=`<b>${t}</b><span>${escapeHtml(p)}</span>`;b.onclick=()=>{if(mode){currentMode=mode;renderModes();$("#headTitle").textContent=MODES[mode].title;$("#headSub").textContent=MODES[mode].sub}$("#templatesModal").classList.remove("show");inputEl.value=p;autoGrow();inputEl.focus()};box.appendChild(b)})});$("#templatesModal").classList.add("show")}
 function openSaved(){const box=$("#savedList");box.innerHTML="";const list=savedItems.filter(s=>s.clientId===activeClient);if(!list.length){box.innerHTML='<div style="color:var(--muted);font-size:13px">Nada salvo ainda. Clique em ⭐ Salvar numa resposta.</div>'}list.forEach(s=>{const d=document.createElement("div");d.className="saved-item";d.innerHTML=`<span class="rm" title="Remover">✕</span>`+escapeHtml(s.content.slice(0,600))+(s.content.length>600?"…":"");d.querySelector(".rm").onclick=()=>{savedItems=savedItems.filter(x=>x.id!==s.id);save(K.saved,savedItems);openSaved()};box.appendChild(d)});$("#savedModal").classList.add("show")}
 
+/* ---------- CRM de influenciadores ---------- */
+function crmOf(){return crm.filter(c=>c.clientId===activeClient)}
+function fmtMoney(n){n=Number(n)||0;return "R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function engRate(i){const s=Number(i.seguidores)||0;if(!s)return null;return ((Number(i.likes||0)+Number(i.coments||0))/s)*100}
+function roiCalc(i){const inv=(Number(i.cache)||0)+(Number(i.custo)||0);const v=Number(i.vendas)||0;return {inv,lucro:v-inv,roi:inv?((v-inv)/inv)*100:null}}
+function openCrm(){$("#crmClientName").textContent="— "+(getClient().memory.name||"");$("#crmForm").style.display="none";renderCrm();$("#crmModal").classList.add("show")}
+function renderCrm(){
+  const box=$("#crmList");box.innerHTML="";const list=crmOf();
+  const tv=list.reduce((a,i)=>a+(Number(i.vendas)||0),0);const ti=list.reduce((a,i)=>a+roiCalc(i).inv,0);
+  $("#crmSummary").textContent=list.length+" influenciador(es) • Vendas: "+fmtMoney(tv)+" • Investido: "+fmtMoney(ti)+(ti?(" • ROI geral "+(((tv-ti)/ti)*100).toFixed(0)+"%"):"");
+  if(!list.length){box.innerHTML='<div style="color:var(--muted);font-size:13px">Nenhum influenciador ainda. Clique em "＋ Adicionar influenciador".</div>';return}
+  list.forEach(i=>{
+    const er=engRate(i),r=roiCalc(i);
+    const erTxt=er==null?"—":er.toFixed(2)+"%";const erColor=er==null?"var(--muted)":(er>=3?"var(--good)":(er>=1?"var(--warn)":"var(--bad)"));
+    const roiTxt=r.roi==null?"—":((r.roi>=0?"+":"")+r.roi.toFixed(0)+"%");const roiColor=r.roi==null?"var(--muted)":(r.roi>=0?"var(--good)":"var(--bad)");
+    const d=document.createElement("div");d.className="saved-item";
+    d.innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div><b>${escapeHtml(i.nome||"—")}</b> <span style="color:var(--muted)">${escapeHtml(i.arroba||"")}</span><br>
+      <span style="font-size:12px;color:var(--muted)">${escapeHtml(i.nicho||"")} • ${(Number(i.seguidores)||0).toLocaleString("pt-BR")} seg. • Eng <b style="color:${erColor}">${erTxt}</b></span></div>
+      <div style="text-align:right;font-size:12px;white-space:nowrap"><span class="chip" style="padding:3px 9px;cursor:default">${escapeHtml(i.status||"—")}</span><br>
+      <span style="color:var(--muted)">ROI <b style="color:${roiColor}">${roiTxt}</b> • Lucro ${fmtMoney(r.lucro)}</span></div></div>
+      <div class="acts" style="margin-top:9px"><button class="act ia">🤖 Analisar com IA</button><button class="act ed">✎ Editar</button><button class="act rm">🗑️ Excluir</button></div>`;
+    d.querySelector(".ia").onclick=()=>crmAnalyze(i);
+    d.querySelector(".ed").onclick=()=>crmFormShow(i);
+    d.querySelector(".rm").onclick=()=>{if(confirm("Excluir "+(i.nome||"este influenciador")+"?")){crm=crm.filter(x=>x.id!==i.id);save(K.crm,crm);renderCrm()}};
+    box.appendChild(d);
+  });
+}
+function crmFormShow(i){
+  i=i||{};$("#crm_id").value=i.id||"";$("#crm_nome").value=i.nome||"";$("#crm_arroba").value=i.arroba||"";
+  $("#crm_seguidores").value=i.seguidores||"";$("#crm_nicho").value=i.nicho||"";$("#crm_likes").value=i.likes||"";$("#crm_coments").value=i.coments||"";
+  $("#crm_status").value=i.status||"Prospect";$("#crm_contato").value=i.contato||"";$("#crm_cache").value=i.cache||"";$("#crm_custo").value=i.custo||"";$("#crm_vendas").value=i.vendas||"";$("#crm_obs").value=i.obs||"";
+  $("#crmForm").style.display="block";$("#crmForm").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function crmSave(){
+  const id=$("#crm_id").value;
+  const data={nome:$("#crm_nome").value.trim(),arroba:$("#crm_arroba").value.trim(),seguidores:$("#crm_seguidores").value,nicho:$("#crm_nicho").value.trim(),likes:$("#crm_likes").value,coments:$("#crm_coments").value,status:$("#crm_status").value,contato:$("#crm_contato").value.trim(),cache:$("#crm_cache").value,custo:$("#crm_custo").value,vendas:$("#crm_vendas").value,obs:$("#crm_obs").value.trim()};
+  if(!data.nome&&!data.arroba){alert("Coloque pelo menos o nome ou o @.");return}
+  if(id){const it=crm.find(x=>x.id===id);if(it)Object.assign(it,data)}else{crm.push(Object.assign({id:uid(),clientId:activeClient},data))}
+  save(K.crm,crm);$("#crmForm").style.display="none";renderCrm();
+}
+function crmAnalyze(i){
+  const er=engRate(i),r=roiCalc(i);
+  const txt="Analise este influenciador para uma possível parceria. Diga se vale a pena, sinais de alerta a checar (seguidor falso, engajamento real) e como abordar:\n"+
+    "- Nome/@: "+(i.nome||"")+" "+(i.arroba||"")+"\n- Nicho: "+(i.nicho||"")+"\n- Seguidores: "+(i.seguidores||"?")+"\n- Média curtidas: "+(i.likes||"?")+" | Média comentários: "+(i.coments||"?")+"\n- Taxa de engajamento: "+(er==null?"?":er.toFixed(2)+"%")+"\n- Cachê R$"+(i.cache||0)+" | Custo produto R$"+(i.custo||0)+" | Vendas R$"+(i.vendas||0)+" | ROI "+(r.roi==null?"?":r.roi.toFixed(0)+"%")+"\n- Status: "+(i.status||"")+"\n- Obs: "+(i.obs||"");
+  currentMode="influencer";renderModes();$("#headTitle").textContent=MODES.influencer.title;$("#headSub").textContent=MODES.influencer.sub;
+  $("#crmModal").classList.remove("show");currentId=null;save(K.cur,null);renderMessages();inputEl.value=txt;autoGrow();sendMessage();
+}
+
 /* ---------- tema ---------- */
 function applyTheme(){document.documentElement.setAttribute("data-theme",settings.theme);$("#toggleTheme").textContent=settings.theme==="dark"?"🌙":"☀️"}
 
@@ -706,6 +802,10 @@ $("#saveMemory").onclick=saveMemoryFromModal;
 $("#fillExample").onclick=()=>{MF.forEach(f=>{const el=$("#m_"+f);if(el&&!el.value.trim())el.value=EXAMPLE_MEMORY[f]||""})};
 $("#openTemplates").onclick=openTemplates;
 $("#openSaved").onclick=openSaved;
+$("#openCrm").onclick=openCrm;
+$("#crmAddBtn").onclick=()=>crmFormShow(null);
+$("#crmCancel").onclick=()=>$("#crmForm").style.display="none";
+$("#crmSave").onclick=crmSave;
 $("#toggleTheme").onclick=()=>{settings.theme=settings.theme==="dark"?"light":"dark";save(K.settings,settings);applyTheme()};
 document.querySelectorAll(".modal-bg").forEach(mb=>mb.addEventListener("click",e=>{if(e.target===mb)mb.classList.remove("show")}));
 
@@ -729,9 +829,9 @@ $("#saveNotion").onclick=async()=>{
   }catch(e){r.style.color="var(--bad)";r.textContent="✗ "+e.message.slice(0,80)+" — a janela da Ponte está aberta? Use o atalho do painel.";}
 };
 $("#testConn").onclick=async()=>{const r=$("#testResult");r.style.color="var(--muted)";r.textContent="Testando…";const old=settings.url;settings.url=$("#setUrl").value.trim();const m=await checkConnection();settings.url=old;if(m){r.style.color="var(--good)";r.textContent="✓ Conectado! Modelos: "+(m.join(", ")||"nenhum");populateModels()}else{r.style.color="var(--bad)";r.textContent="✗ Não conectou. Abra o Ollama e use o ABRIR PAINEL.bat."}};
-$("#exportData").onclick=()=>downloadFile("backup-painel-ia.json",JSON.stringify({clients,convos,savedItems,settings,v:2},null,2),"application/json");
+$("#exportData").onclick=()=>downloadFile("backup-painel-ia.json",JSON.stringify({clients,convos,savedItems,crm,settings,v:2},null,2),"application/json");
 $("#importData").onclick=()=>$("#importFile").click();
-$("#importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);if(d.clients){clients=d.clients;save(K.clients,clients)}if(d.convos){convos=d.convos;save(K.convos,convos)}if(d.savedItems){savedItems=d.savedItems;save(K.saved,savedItems)}if(d.settings){settings=Object.assign(settings,d.settings);save(K.settings,settings)}activeClient=clients[0]?.id;save(K.active,activeClient);alert("Backup importado com sucesso!");location.reload()}catch(x){alert("Arquivo inválido.")}};rd.readAsText(f)};
+$("#importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);if(d.clients){clients=d.clients;save(K.clients,clients)}if(d.convos){convos=d.convos;save(K.convos,convos)}if(d.savedItems){savedItems=d.savedItems;save(K.saved,savedItems)}if(d.crm){crm=d.crm;save(K.crm,crm)}if(d.settings){settings=Object.assign(settings,d.settings);save(K.settings,settings)}activeClient=clients[0]?.id;save(K.active,activeClient);alert("Backup importado com sucesso!");location.reload()}catch(x){alert("Arquivo inválido.")}};rd.readAsText(f)};
 
 /* voz */
 let recog=null;

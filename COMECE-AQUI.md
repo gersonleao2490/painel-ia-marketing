@@ -26,11 +26,14 @@ Já deixei **3 clientes de exemplo** prontos (Glow Estética, Loja Viver Bem, e 
 
 ---
 
-## 🎯 Os 10 especialistas
+## 🎯 Os 11 especialistas
 
-Diretora de Marketing · Social Media · Influencer · SEO & Conversão · Estratégia/SWOT · Roteirista · **Tráfego Pago** · **E-mail/CRM** · Calendário Editorial · Programadora.
+Diretora de Marketing · Social Media · Influencer · SEO & Conversão · Estratégia/SWOT · Roteirista · **Copywriter** · **Tráfego Pago** · **E-mail/CRM** · Calendário Editorial · Programadora.
 
 Clique no especialista **antes** de perguntar.
+
+## 👥 CRM de Influenciadores
+No topo, botão **👥 CRM**: cadastre seus criadores por cliente. Ele calcula sozinho a **taxa de engajamento** e o **ROI** (lucro), e tem o botão **🤖 Analisar com IA** que manda os dados pro especialista de influência te dar o parecer.
 
 ---
 
