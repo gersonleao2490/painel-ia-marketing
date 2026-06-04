@@ -245,7 +245,17 @@
       <div class="field"><label>Endereço do Ollama</label><input id="setUrl" value="http://localhost:11434" /></div>
       <div class="field"><label>Modelo</label><select id="setModel"></select></div>
     </div>
-    <div class="field"><label>Ponte do Notion (calendário automático) — veja NOTION-COMO-CONECTAR.md</label><input id="setNotion" value="http://localhost:3333" /></div>
+    <div class="field"><label>Ponte do Notion (avançado — normalmente não mexer)</label><input id="setNotion" value="http://localhost:3333" /></div>
+    <div class="field" style="border-top:1px solid var(--line);padding-top:14px">
+      <label>🗂️ Conectar o Notion (cole e salve — só 1 vez)</label>
+      <input id="setNotionToken" placeholder="Token do Notion (secret_… ou ntn_…)" style="margin-bottom:8px" />
+      <input id="setNotionDb" placeholder="Link ou ID da sua database do Notion" />
+      <div style="display:flex;gap:9px;margin-top:9px;align-items:center;flex-wrap:wrap">
+        <button class="btn sm primary" id="saveNotion">Salvar e conectar</button>
+        <span class="test-line" id="notionResult"></span>
+      </div>
+      <div class="hint" style="margin-top:8px">Não sabe pegar o token e o link? Abra o arquivo <b>NOTION-COMO-CONECTAR.md</b>. Seu token fica só no seu PC (nunca vai pro GitHub).</div>
+    </div>
     <div class="field">
       <label>Criatividade (temperatura): <b id="tempVal">0.7</b> — baixo = focado, alto = ousado</label>
       <div class="range"><span>Focado</span><input type="range" id="setTemp" min="0" max="1.2" step="0.1" value="0.7" /><span>Ousado</span></div>
@@ -703,6 +713,21 @@ document.querySelectorAll(".modal-bg").forEach(mb=>mb.addEventListener("click",e
 $("#openSettings").onclick=()=>{$("#setUrl").value=settings.url;$("#setBrand").value=settings.brand||"";$("#setNotion").value=settings.notionBridge||"http://localhost:3333";$("#setTemp").value=settings.temp;$("#tempVal").textContent=settings.temp;populateModels();$("#settingsModal").classList.add("show")};
 $("#setTemp").addEventListener("input",e=>$("#tempVal").textContent=e.target.value);
 $("#saveSettings").onclick=()=>{settings.url=$("#setUrl").value.trim()||"http://localhost:11434";settings.model=$("#setModel").value;settings.temp=Number($("#setTemp").value);settings.brand=$("#setBrand").value.trim();settings.notionBridge=$("#setNotion").value.trim()||"http://localhost:3333";save(K.settings,settings);$("#brandName").textContent=settings.brand||"Diretora Sênior IA";$("#settingsModal").classList.remove("show");checkConnection()};
+$("#saveNotion").onclick=async()=>{
+  const token=$("#setNotionToken").value.trim(),db=$("#setNotionDb").value.trim();
+  const base=($("#setNotion").value.trim()||"http://localhost:3333").replace(/\/$/,"");
+  const r=$("#notionResult");
+  if(!token||!db){r.style.color="var(--bad)";r.textContent="Preencha o token e o link da database.";return}
+  r.style.color="var(--muted)";r.textContent="Salvando…";
+  try{
+    const c=await fetch(base+"/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token,databaseId:db})});
+    const cj=await c.json();if(!c.ok)throw new Error(cj.error||"erro ao salvar");
+    r.textContent="Testando conexão…";
+    const t=await fetch(base+"/test",{method:"POST"});const tj=await t.json();
+    if(t.ok){r.style.color="var(--good)";r.textContent="✓ Notion conectado! Já pode enviar calendários.";$("#setNotionToken").value="";}
+    else{r.style.color="var(--bad)";r.textContent="✗ "+String(tj.error||"falhou").slice(0,90);}
+  }catch(e){r.style.color="var(--bad)";r.textContent="✗ "+e.message.slice(0,80)+" — a janela da Ponte está aberta? Use o atalho do painel.";}
+};
 $("#testConn").onclick=async()=>{const r=$("#testResult");r.style.color="var(--muted)";r.textContent="Testando…";const old=settings.url;settings.url=$("#setUrl").value.trim();const m=await checkConnection();settings.url=old;if(m){r.style.color="var(--good)";r.textContent="✓ Conectado! Modelos: "+(m.join(", ")||"nenhum");populateModels()}else{r.style.color="var(--bad)";r.textContent="✗ Não conectou. Abra o Ollama e use o ABRIR PAINEL.bat."}};
 $("#exportData").onclick=()=>downloadFile("backup-painel-ia.json",JSON.stringify({clients,convos,savedItems,settings,v:2},null,2),"application/json");
 $("#importData").onclick=()=>$("#importFile").click();

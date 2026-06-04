@@ -82,6 +82,31 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  if(req.method === 'POST' && req.url === '/config'){
+    let data = '';
+    req.on('data', c => data += c);
+    req.on('end', () => {
+      try{
+        const b = JSON.parse(data || '{}');
+        const newCfg = { token:String(b.token||'').trim(), databaseId:String(b.databaseId||'').trim(), port: cfg.port||3333 };
+        fs.writeFileSync(CFG_PATH, JSON.stringify(newCfg, null, 2));
+        loadCfg(); titlePropCache = null;
+        return sendJson(res, 200, { saved:true, configured: configured() });
+      }catch(e){ return sendJson(res, 500, { error:String(e.message) }); }
+    });
+    return;
+  }
+  if(req.method === 'POST' && req.url === '/test'){
+    loadCfg(); titlePropCache = null;
+    (async () => {
+      try{
+        if(!configured()) return sendJson(res, 400, { error:'Faltam o token e o link da database. Preencha e salve primeiro.' });
+        const name = await getTitleProp();
+        return sendJson(res, 200, { ok:true, titleProp:name });
+      }catch(e){ return sendJson(res, 500, { error:String(e.message) }); }
+    })();
+    return;
+  }
   sendJson(res, 404, { error:'rota não encontrada' });
 });
 

@@ -4,12 +4,14 @@ Sua IA de marketing rodando **100% no seu computador, de graça**, com o modelo 
 
 ---
 
-## ▶️ Como abrir (toda vez)
+## ▶️ Como abrir (super fácil — sem terminal)
 
-1. Abra o **Ollama** (ícone perto do relógio do Windows).
-2. Dê **dois cliques** em **`ABRIR PAINEL.bat`**.
-3. Abre no navegador. (Se aparecer erro na 1ª vez, aperte **F5**.)
-4. Não feche a janela preta enquanto usar. Bolinha **verde** = conectada.
+Dê **dois cliques no ícone "Painel IA de Marketing"** que está na sua **Área de Trabalho**. 🖱️
+
+Pronto — ele liga tudo sozinho (Ollama + painel + Notion), **sem nenhuma janela preta**, e abre no navegador. (Se na 1ª vez aparecer erro, aperte **F5**.)
+
+> Não tem o ícone? Dê dois cliques em **`ABRIR-PAINEL.vbs`** (nesta pasta) — faz a mesma coisa.
+> A bolinha **verde** no canto = conectada e pronta.
 
 ---
 

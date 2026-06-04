@@ -17,24 +17,19 @@ Já deixei **toda a parte técnica pronta** (a "Ponte Notion" + o botão no pain
 2. No canto superior direito dessa tabela, clique nos **três pontinhos `•••`** → **Connections** (ou "Conexões") → procure e adicione a sua integração **`Painel IA`**.
 3. Copie o **link** dessa database: clique em `•••` → **Copy link**. (Pode colar o link inteiro — a ponte entende.)
 
-## Passo 3 — Colar token e link no arquivo de configuração
-1. Abra o arquivo **`notion-config.json`** (nesta pasta) com o Bloco de Notas.
-2. Substitua os textos pelos seus:
-   ```json
-   {
-     "token": "cole_aqui_o_token_do_passo_1",
-     "databaseId": "cole_aqui_o_link_da_database_do_passo_2",
-     "port": 3333
-   }
-   ```
-3. **Salve** o arquivo (Ctrl+S).
+## Passo 3 — Colar no painel (sem mexer em arquivo!)
+1. No painel, clique em **⚙️** (engrenagem, canto inferior esquerdo).
+2. Lá embaixo, em **"🗂️ Conectar o Notion"**:
+   - cole o **token** (Passo 1) no primeiro campo;
+   - cole o **link da database** (Passo 2) no segundo campo.
+3. Clique em **"Salvar e conectar"**.
+4. Deve aparecer **"✓ Notion conectado!"**. Pronto, é só isso. 🎉
 
 ---
 
-## ✅ Pronto! Como usar
-1. Feche o painel se estiver aberto e abra com **`ABRIR TUDO (painel + notion).bat`**
-   (ele abre o painel **e** a Ponte Notion).
-2. No painel, vá no especialista **🗓️ Calendário Editorial** e peça um calendário.
+## ✅ Como usar
+1. Abra o painel pelo **ícone na Área de Trabalho** (já liga a Ponte do Notion junto).
+2. No especialista **🗓️ Calendário Editorial**, peça um calendário.
 3. Quando a tabela aparecer, clique em **🚀 Enviar pro Notion**.
 4. Olhe sua database no Notion — cada dia do calendário vira um item lá. 🎉
 
