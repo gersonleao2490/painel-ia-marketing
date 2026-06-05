@@ -318,7 +318,7 @@
       </div>
       <div class="foot">
         <span id="charCount">0 caracteres</span>
-        <span><b style="color:var(--good)">v6.5</b> • 📎/Ctrl+V • IA local (Ollama) • não inventa links</span>
+        <span><b style="color:var(--good)">v6.6</b> • ☁️ Gemini • 📎/Ctrl+V • IA local ou nuvem</span>
       </div>
     </div>
   </main>
@@ -329,6 +329,16 @@
   <div class="modal">
     <h3>⚙️ Configurações</h3>
     <div class="desc">Normalmente não precisa mexer. Ajuste só se trocou de modelo, quiser personalizar a marca, ou a conexão falhar.</div>
+    <div class="field" style="background:linear-gradient(160deg,rgba(139,92,255,.14),rgba(20,24,36,.4));border:1px solid rgba(139,92,255,.3);border-radius:12px;padding:14px">
+      <label style="font-size:13px">🚀 IA na Nuvem (Google Gemini) — <b style="color:var(--good)">RÁPIDA e GRÁTIS</b></label>
+      <input id="setGemini" type="password" placeholder="Cole aqui sua chave do Gemini (AI...)" style="margin-bottom:8px" />
+      <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+        <button class="btn sm primary" id="saveGemini">Ligar IA na nuvem</button>
+        <button class="btn sm" id="offGemini">Voltar pro PC (Ollama)</button>
+        <span class="test-line" id="geminiResult"></span>
+      </div>
+      <div class="hint" style="margin-top:8px">Resolve a lentidão na hora, sem custo. Como pegar a chave grátis: <b>COMO-LIGAR-IA-NUVEM.md</b> (leva 2 min).</div>
+    </div>
     <div class="field"><label>Nome da sua marca / agência (aparece no topo — para revender)</label><input id="setBrand" placeholder="Ex: Studio Gerson Marketing" /></div>
     <div class="grid2">
       <div class="field"><label>Endereço do Ollama</label><input id="setUrl" value="http://localhost:11434" /></div>
@@ -921,7 +931,7 @@ async function sendToNotion(md,btn){
 /* ---------- conexão ---------- */
 async function checkConnection(){
   const dots=[$("#dot1")];
-  try{const r=await fetch(ollamaBase()+"/api/tags");if(!r.ok)throw 0;const j=await r.json();const models=(j.models||[]).map(m=>m.name);dots.forEach(d=>d.className="dot on");$("#statusText").textContent="Conectada • "+(settings.model);return models}
+  try{const r=await fetch(ollamaBase()+"/api/tags");if(!r.ok)throw 0;const j=await r.json();const models=(j.models||[]).map(m=>m.name);dots.forEach(d=>d.className="dot on");$("#statusText").textContent="Conectada • "+(models[0]||settings.model);return models}
   catch(e){dots.forEach(d=>d.className="dot off");$("#statusText").textContent="Ollama desconectado";return null}
 }
 async function populateModels(){const sel=$("#setModel");const models=await checkConnection();sel.innerHTML="";const list=models&&models.length?models:[settings.model];list.forEach(m=>{const o=document.createElement("option");o.value=m;o.textContent=m;if(m===settings.model)o.selected=true;sel.appendChild(o)});if(models&&!models.includes(settings.model)){const o=document.createElement("option");o.value=settings.model;o.textContent=settings.model+" (não baixado)";o.selected=true;sel.appendChild(o)}}
@@ -1093,6 +1103,25 @@ $("#saveNotion").onclick=async()=>{
     if(t.ok){r.style.color="var(--good)";r.textContent="✓ Notion conectado! Já pode enviar calendários.";$("#setNotionToken").value="";}
     else{r.style.color="var(--bad)";r.textContent="✗ "+String(tj.error||"falhou").slice(0,90);}
   }catch(e){r.style.color="var(--bad)";r.textContent="✗ "+e.message.slice(0,80)+" — a janela da Ponte está aberta? Use o atalho do painel.";}
+};
+$("#saveGemini").onclick=async()=>{
+  const key=$("#setGemini").value.trim();const r=$("#geminiResult");
+  if(!serverMode){r.style.color="var(--bad)";r.textContent="A IA na nuvem só funciona abrindo o painel pelo ícone (com login).";return}
+  if(!key){r.style.color="var(--bad)";r.textContent="Cole sua chave do Gemini.";return}
+  r.style.color="var(--muted)";r.textContent="Ligando e testando…";
+  try{
+    const c=await fetch("/gemini-config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key})});
+    const cj=await c.json();if(!c.ok||!cj.on)throw new Error(cj.error||"chave muito curta");
+    const t=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"gemini",stream:false,messages:[{role:"user",content:"responda apenas: ok"}]})});
+    const txt=await t.text();let content="";try{content=JSON.parse(txt.split("\n").find(l=>l.trim())).message.content;}catch(e){}
+    if(content&&!content.startsWith("⚠️")){r.style.color="var(--good)";r.textContent="✓ IA na nuvem LIGADA! Bem mais rápida. Recarregando…";$("#setGemini").value="";setTimeout(()=>location.reload(),1600);}
+    else{r.style.color="var(--bad)";r.textContent="✗ "+(content||"sem resposta — confira a chave").slice(0,95);}
+  }catch(e){r.style.color="var(--bad)";r.textContent="✗ "+String(e.message).slice(0,95);}
+};
+$("#offGemini").onclick=async()=>{
+  if(!serverMode){$("#geminiResult").textContent="(modo nuvem só pelo servidor)";return}
+  try{await fetch("/gemini-config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:""})});}catch(e){}
+  $("#geminiResult").style.color="var(--muted)";$("#geminiResult").textContent="Voltou pra IA do PC (Ollama). Recarregando…";setTimeout(()=>location.reload(),1200);
 };
 $("#testConn").onclick=async()=>{const r=$("#testResult");r.style.color="var(--muted)";r.textContent="Testando…";const old=settings.url;settings.url=$("#setUrl").value.trim();const m=await checkConnection();settings.url=old;if(m){r.style.color="var(--good)";r.textContent="✓ Conectado! Modelos: "+(m.join(", ")||"nenhum");populateModels()}else{r.style.color="var(--bad)";r.textContent="✗ Não conectou. Abra o Ollama e use o ABRIR PAINEL.bat."}};
 $("#exportData").onclick=()=>downloadFile("backup-painel-ia.json",JSON.stringify({clients,convos,savedItems,crm,hooks,checklist,settings,v:2},null,2),"application/json");

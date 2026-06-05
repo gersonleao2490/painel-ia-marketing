@@ -108,6 +108,38 @@ function proxyOllama(req, res) {
   req.pipe(pr);
 }
 
+/* ---------- IA na nuvem (Google Gemini) ---------- */
+function geminiConfigured() { return cfg.geminiKey && String(cfg.geminiKey).trim().length > 15 && !/COLE_AQUI/.test(cfg.geminiKey); }
+function endNdjson(res, text) { try { res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8' }); res.write(JSON.stringify({ message: { role: 'assistant', content: text }, done: false }) + '\n'); res.write(JSON.stringify({ done: true }) + '\n'); res.end(); } catch (e) {} }
+function geminiChat(reqBody, res) {
+  let payload; try { payload = JSON.parse(reqBody || '{}'); } catch (e) { return endNdjson(res, '⚠️ erro interno (json).'); }
+  let systemText = ''; const contents = [];
+  for (const m of (payload.messages || [])) {
+    if (m.role === 'system') { systemText += (systemText ? '\n' : '') + (m.content || ''); continue; }
+    const parts = []; if (m.content) parts.push({ text: m.content });
+    if (m.images && m.images.length) for (const img of m.images) parts.push({ inlineData: { mimeType: 'image/jpeg', data: img } });
+    contents.push({ role: m.role === 'assistant' ? 'model' : 'user', parts });
+  }
+  const gReq = { contents, generationConfig: { temperature: (payload.options && payload.options.temperature) || 0.7 } };
+  if (systemText) gReq.systemInstruction = { parts: [{ text: systemText }] };
+  const data = JSON.stringify(gReq);
+  const r = https.request({ hostname: 'generativelanguage.googleapis.com', path: '/v1beta/models/' + (cfg.geminiModel || 'gemini-1.5-flash') + ':generateContent?key=' + encodeURIComponent(cfg.geminiKey), method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } },
+    gres => {
+      let body = ''; gres.on('data', c => body += c); gres.on('end', () => {
+        try {
+          const j = JSON.parse(body);
+          if (gres.statusCode !== 200 || j.error) return endNdjson(res, '⚠️ IA na nuvem recusou: ' + ((j.error && j.error.message) || ('HTTP ' + gres.statusCode)) + ' — confira sua chave do Gemini em ⚙️.');
+          const c0 = j.candidates && j.candidates[0];
+          let text = (c0 && c0.content && c0.content.parts && c0.content.parts.map(p => p.text || '').join('')) || '';
+          if (!text && c0 && c0.finishReason === 'SAFETY') text = '(a IA na nuvem bloqueou esta resposta por política de segurança — tente reformular)';
+          endNdjson(res, text || '(sem resposta da IA na nuvem)');
+        } catch (e) { endNdjson(res, '⚠️ erro lendo a resposta da IA na nuvem.'); }
+      });
+    });
+  r.on('error', e => endNdjson(res, '⚠️ não consegui falar com a IA na nuvem: ' + e.message));
+  r.write(data); r.end();
+}
+
 /* ---------- static ---------- */
 function serveIndex(res) {
   fs.readFile(path.join(DIR, 'index.html'), (e, buf) => { if (e) { res.writeHead(500); res.end('index.html não encontrado'); } else { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache, no-store, must-revalidate' }); res.end(buf); } });
@@ -142,8 +174,11 @@ const server = http.createServer((req, res) => {
   });
 
   // ---- daqui pra baixo exige login ----
-  const protectedApi = url.startsWith('/api/') || ['/notion', '/config', '/test', '/notion-health', '/data'].includes(url);
+  const protectedApi = url.startsWith('/api/') || ['/notion', '/config', '/test', '/notion-health', '/data', '/gemini-config'].includes(url);
   if (protectedApi && !user) return json(res, 401, { error: 'Faça login para usar.' });
+
+  // ---- IA na nuvem (Gemini): salvar chave + checar ----
+  if (url === '/gemini-config' && req.method === 'POST') return readBody(req, b => { try { const d = JSON.parse(b || '{}'); cfg.geminiKey = String(d.key || '').trim(); if (d.model) cfg.geminiModel = String(d.model).trim(); fs.writeFileSync(CFG_PATH, JSON.stringify(cfg, null, 2)); json(res, 200, { saved: true, on: geminiConfigured() }); } catch (e) { json(res, 500, { error: String(e.message) }); } });
 
   // ---- sincronização de dados por usuário (acessível de qualquer aparelho) ----
   if (url === '/data') {
@@ -152,7 +187,13 @@ const server = http.createServer((req, res) => {
     if (req.method === 'POST') return readBody(req, b => { try { fs.mkdirSync(path.join(DIR, 'data'), { recursive: true }); fs.writeFileSync(f, b || '{}'); json(res, 200, { saved: true }); } catch (e) { json(res, 500, { error: String(e.message) }); } });
   }
 
-  if (url.startsWith('/api/')) return proxyOllama(req, res); // Ollama (login ok)
+  if (url.startsWith('/api/')) {
+    if (geminiConfigured()) {
+      if (url === '/api/tags') return json(res, 200, { models: [{ name: (cfg.geminiModel || 'gemini-1.5-flash') + ' (nuvem)' }] });
+      if (url === '/api/chat') return readBody(req, b => geminiChat(b, res));
+    }
+    return proxyOllama(req, res); // Ollama local (se Gemini não configurado)
+  }
 
   if (url === '/notion-health') return json(res, 200, { ok: true, configured: (loadNotion(), notionReady()) });
   if (url === '/config' && req.method === 'POST') return readBody(req, b => {
