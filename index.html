@@ -318,7 +318,7 @@
       </div>
       <div class="foot">
         <span id="charCount">0 caracteres</span>
-        <span><b style="color:var(--good)">v6.3</b> • 📎/Ctrl+V • IA local (Ollama) • não inventa links</span>
+        <span><b style="color:var(--good)">v6.4</b> • 📎/Ctrl+V • IA local (Ollama) • não inventa links</span>
       </div>
     </div>
   </main>
@@ -826,28 +826,45 @@ async function regenerate(idx){
   save(K.convos,convos);renderMessages();
   await streamAssistant(convo);
 }
+async function streamRead(payload,aiBubble){
+  let acc="";
+  const res=await fetch(ollamaBase()+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:abortCtl.signal});
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  const reader=res.body.getReader();const dec=new TextDecoder();let buf="";
+  while(true){const{done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const parts=buf.split("\n");buf=parts.pop();
+    for(const line of parts){if(!line.trim())continue;try{const j=JSON.parse(line);if(j.message&&j.message.content){acc+=j.message.content;aiBubble.classList.remove("cursor");aiBubble.innerHTML=renderMarkdown(acc)+'<span class="cursor"></span>';messagesEl.scrollTop=messagesEl.scrollHeight}}catch(e){}}}
+  return acc;
+}
 async function streamAssistant(convo){
   const aiBubble=addMessageEl("assistant","",convo.messages.length);
   const lastUser=[...convo.messages].reverse().find(m=>m.role==="user");
   const useVision=!!(lastUser&&lastUser.images&&lastUser.images.length);
   aiBubble.classList.add("cursor");
-  aiBubble.innerHTML='<span class="typing"><span></span><span></span><span></span></span>'+(useVision?' <span style="color:var(--muted);font-size:12px">carregando o modelo de visão e analisando… (a 1ª vez pode levar ~30s — não feche)</span>':'');
-  const model=useVision?(settings.visionModel||"llava-llama3"):settings.model;
-  const hist=useVision?[{role:"user",content:lastUser.content,images:lastUser.images}]:convo.messages.map(m=>({role:m.role,content:m.content}));
-  const payload={model,stream:true,options:{temperature:Number(settings.temp)},messages:[{role:"system",content:buildSystem()},...hist]};
+  const visModel=settings.visionModel||"llava";
   streaming=true;setSendStop(true);abortCtl=new AbortController();let acc="";
   try{
-    const res=await fetch(ollamaBase()+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:abortCtl.signal});
-    if(!res.ok)throw new Error("HTTP "+res.status);
-    const reader=res.body.getReader();const dec=new TextDecoder();let buf="";
-    while(true){const{done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const parts=buf.split("\n");buf=parts.pop();
-      for(const line of parts){if(!line.trim())continue;try{const j=JSON.parse(line);if(j.message&&j.message.content){acc+=j.message.content;aiBubble.classList.remove("cursor");aiBubble.innerHTML=renderMarkdown(acc)+'<span class="cursor"></span>';messagesEl.scrollTop=messagesEl.scrollHeight}}catch(e){}}}
+    if(useVision){
+      // ETAPA 1 — o modelo de VISÃO lê o print e descreve tudo (fatos)
+      aiBubble.innerHTML='<span class="typing"><span></span><span></span><span></span></span> <span style="color:var(--muted);font-size:12px">👁️ lendo o print… (~20-30s, não feche)</span>';
+      const descRes=await fetch(ollamaBase()+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:visModel,stream:false,options:{temperature:0.2},messages:[{role:"system",content:"Você lê prints de redes sociais e descreve TUDO de forma factual para um analista de marketing. Liste: nome e @ do perfil; bio/descrição; números visíveis (seguidores, seguindo, nº de posts); os temas/assuntos das fotos da grade; estilo visual, cores e identidade; destaques; e qualquer texto legível. Se um número não estiver legível, escreva 'não legível'. NÃO invente nada. Português do Brasil."},{role:"user",content:"Descreva este print em detalhes.",images:lastUser.images}]}),signal:abortCtl.signal});
+      if(!descRes.ok)throw new Error("HTTP "+descRes.status);
+      const dj=await descRes.json();const desc=((dj.message&&dj.message.content)||"").trim();
+      // ETAPA 2 — o modelo INTELIGENTE faz a auditoria estratégica com base na descrição + contexto
+      aiBubble.innerHTML='<span class="typing"><span></span><span></span><span></span></span> <span style="color:var(--muted);font-size:12px">✍️ montando a auditoria estratégica…</span>';
+      const userQ=(lastUser.content&&lastUser.content.trim())?lastUser.content.trim():"Analise este perfil.";
+      const payload2={model:settings.model,stream:true,options:{temperature:Number(settings.temp)},messages:[{role:"system",content:buildSystem()},{role:"user",content:"PEDIDO: "+userQ+"\n\nUm leitor de imagem descreveu o print enviado assim (use SOMENTE o que está aqui como fato do print — NÃO invente números nem dados):\n\"\"\"\n"+(desc||"(não foi possível ler a imagem)")+"\n\"\"\"\n\nFaça uma AUDITORIA ESTRATÉGICA do perfil com base nesta descrição + no contexto da empresa: 1) Diagnóstico honesto do que dá pra ver no print; 2) O que está bom; 3) O que melhorar (específico, com exemplos); 4) Oportunidades; 5) Plano de ação concreto (próximos posts, bio, grade). Onde faltar dado (número não legível), diga exatamente o que ela deve conferir."}]};
+      acc=await streamRead(payload2,aiBubble);
+    } else {
+      const payload={model:settings.model,stream:true,options:{temperature:Number(settings.temp)},messages:[{role:"system",content:buildSystem()},...convo.messages.map(m=>({role:m.role,content:m.content}))]};
+      acc=await streamRead(payload,aiBubble);
+    }
     aiBubble.innerHTML=renderMarkdown(acc);aiBubble.classList.remove("cursor");
     convo.messages.push({role:"assistant",content:acc});convo.updatedAt=Date.now();save(K.convos,convos);renderMessages();renderRefine();
   }catch(err){
     aiBubble.classList.remove("cursor");
     if(err.name==="AbortError"&&acc){aiBubble.innerHTML=renderMarkdown(acc);convo.messages.push({role:"assistant",content:acc});save(K.convos,convos);renderMessages()}
-    else aiBubble.innerHTML=errHtml(err,model);
+    else if(err.name==="AbortError"){aiBubble.innerHTML='<span style="color:var(--muted)">(cancelado)</span>'}
+    else aiBubble.innerHTML=errHtml(err,useVision?visModel:settings.model);
   }finally{streaming=false;setSendStop(false);abortCtl=null;checkConnection()}
 }
 function setSendStop(on){sendBtn.classList.toggle("stop",on);sendBtn.innerHTML=on?"■":"➤";sendBtn.title=on?"Parar":"Enviar"}
