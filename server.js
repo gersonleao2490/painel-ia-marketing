@@ -26,7 +26,7 @@ try { cfg = Object.assign(cfg, JSON.parse(fs.readFileSync(CFG_PATH, 'utf8'))); }
 if (!cfg.inviteCode) { cfg.inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase(); fs.writeFileSync(CFG_PATH, JSON.stringify(cfg, null, 2)); }
 
 /* ---------- usuários ---------- */
-function loadUsers() { try { return JSON.parse(fs.readFileSync(USERS_PATH, 'utf8')); } catch (e) { return []; } }
+function loadUsers() { try { const u = JSON.parse(fs.readFileSync(USERS_PATH, 'utf8')); return Array.isArray(u) ? u : [u]; } catch (e) { return []; } }
 function saveUsers(u) { fs.writeFileSync(USERS_PATH, JSON.stringify(u, null, 2)); }
 function hashPw(pw, salt) { return crypto.scryptSync(pw, salt, 64).toString('hex'); }
 function makeUser(username, password, role) {

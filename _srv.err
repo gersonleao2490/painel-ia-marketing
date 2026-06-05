@@ -1,0 +1,12 @@
+C:\Users\useer\Documents\Claude\Projects\ROBO PROMOÇÕES\painel-ia-marketing\server.js:58
+  return loadUsers().find(u => u.username === s.username) || null;
+                     ^
+
+TypeError: loadUsers(...).find is not a function
+    at userFromReq (C:\Users\useer\Documents\Claude\Projects\ROBO PROMOÇÕES\painel-ia-marketing\server.js:58:22)
+    at Server.<anonymous> (C:\Users\useer\Documents\Claude\Projects\ROBO PROMOÇÕES\painel-ia-marketing\server.js:119:16)
+    at Server.emit (node:events:508:28)
+    at parserOnIncoming (node:_http_server:1210:12)
+    at HTTPParser.parserOnHeadersComplete (node:_http_common:125:17)
+
+Node.js v24.13.1
