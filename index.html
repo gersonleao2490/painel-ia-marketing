@@ -318,7 +318,7 @@
       </div>
       <div class="foot">
         <span id="charCount">0 caracteres</span>
-        <span>IA local (Ollama) • não acessa a internet • não inventa links</span>
+        <span><b style="color:var(--good)">v6.2</b> • 📎/Ctrl+V • IA local (Ollama) • não inventa links</span>
       </div>
     </div>
   </main>
@@ -1096,6 +1096,15 @@ function clearImage(){pendingImages=[];$("#imgChip").style.display="none";$("#im
 function setChip(dataUrl,label){pendingImages=[dataUrl.split(",")[1]];$("#imgThumb").src=dataUrl;$("#imgChipLabel").textContent=label||"Imagem anexada — será analisada";$("#imgChip").style.display="flex";}
 $("#imgBtn").onclick=()=>$("#imgInput").click();
 $("#imgRemove").onclick=clearImage;
+function handleImageFile(f){
+  const fr=new FileReader();
+  fr.onload=()=>{const img=new Image();img.onload=()=>{
+    let w=img.width,h=img.height;const max=900;const s=Math.min(1,max/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);
+    const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);
+    setChip(c.toDataURL("image/jpeg",0.7));
+  };img.onerror=()=>alert("Não consegui ler essa imagem.");img.src=fr.result;};
+  fr.readAsDataURL(f);
+}
 $("#imgInput").onchange=e=>{
   const f=e.target.files[0];if(!f)return;
   if(f.type.startsWith("video")){
@@ -1105,14 +1114,13 @@ $("#imgInput").onchange=e=>{
     });
     return;
   }
-  const fr=new FileReader();
-  fr.onload=()=>{const img=new Image();img.onload=()=>{
-    let w=img.width,h=img.height;const max=900;const s=Math.min(1,max/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);
-    const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);
-    setChip(c.toDataURL("image/jpeg",0.7));
-  };img.onerror=()=>alert("Não consegui ler essa imagem.");img.src=fr.result;};
-  fr.readAsDataURL(f);
+  handleImageFile(f);
 };
+/* colar imagem com Ctrl+V (além do 📎) */
+document.addEventListener("paste",e=>{
+  const items=e.clipboardData&&e.clipboardData.items;if(!items)return;
+  for(const it of items){ if(it.type&&it.type.indexOf("image")===0){ const f=it.getAsFile(); if(f){handleImageFile(f);toast("Imagem colada ✓ — agora é só enviar");} e.preventDefault(); break; } }
+});
 function videoToGrid(file,cb){
   const video=document.createElement("video");video.muted=true;video.playsInline=true;video.preload="auto";
   const url=URL.createObjectURL(file);video.src=url;
