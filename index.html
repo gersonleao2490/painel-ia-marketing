@@ -318,7 +318,7 @@
       </div>
       <div class="foot">
         <span id="charCount">0 caracteres</span>
-        <span><b style="color:var(--good)">v6.2</b> • 📎/Ctrl+V • IA local (Ollama) • não inventa links</span>
+        <span><b style="color:var(--good)">v6.3</b> • 📎/Ctrl+V • IA local (Ollama) • não inventa links</span>
       </div>
     </div>
   </main>
@@ -833,7 +833,8 @@ async function streamAssistant(convo){
   aiBubble.classList.add("cursor");
   aiBubble.innerHTML='<span class="typing"><span></span><span></span><span></span></span>'+(useVision?' <span style="color:var(--muted);font-size:12px">carregando o modelo de visão e analisando… (a 1ª vez pode levar ~30s — não feche)</span>':'');
   const model=useVision?(settings.visionModel||"llava-llama3"):settings.model;
-  const payload={model,stream:true,options:{temperature:Number(settings.temp)},messages:[{role:"system",content:buildSystem()},...convo.messages.map(m=>{const o={role:m.role,content:m.content};if(useVision&&m.images&&m.images.length)o.images=m.images;return o})]};
+  const hist=useVision?[{role:"user",content:lastUser.content,images:lastUser.images}]:convo.messages.map(m=>({role:m.role,content:m.content}));
+  const payload={model,stream:true,options:{temperature:Number(settings.temp)},messages:[{role:"system",content:buildSystem()},...hist]};
   streaming=true;setSendStop(true);abortCtl=new AbortController();let acc="";
   try{
     const res=await fetch(ollamaBase()+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:abortCtl.signal});
