@@ -318,7 +318,7 @@
       </div>
       <div class="foot">
         <span id="charCount">0 caracteres</span>
-        <span><b style="color:var(--good)">v6.4</b> • 📎/Ctrl+V • IA local (Ollama) • não inventa links</span>
+        <span><b style="color:var(--good)">v6.5</b> • 📎/Ctrl+V • IA local (Ollama) • não inventa links</span>
       </div>
     </div>
   </main>
@@ -616,6 +616,10 @@ const TEMPLATES = {
     ["Plano de 30 dias","Monte um plano de marketing de 30 dias com metas e KPIs.","geral"],
     ["Comparar concorrentes","Compare meu negócio com 2 concorrentes: pontos fortes, fracos e o que eu faço diferente para ganhar.","estrategia"],
   ],
+  "Análise de Perfil (suba o print 📎)":[
+    ["🔍 Auditar meu perfil","Vou subir o print do meu perfil OU da análise (ex: Not Just Analytics). Faça uma AUDITORIA completa: leia os números (seguidores, engajamento, melhores posts, hashtags), dê o diagnóstico honesto, o que está bom, o que melhorar (específico) e um plano de conteúdo de 30 dias com metas.","estrategia"],
+    ["🕵️ Analisar um concorrente","Vou subir o print do perfil/análise de um concorrente ou influenciador. Analise pontos fortes, o que ele faz bem, lacunas que eu posso aproveitar e como me diferenciar para crescer.","influencer"],
+  ],
 };
 
 /* ---------- exemplos de memória (perfis-semente) ---------- */
@@ -846,7 +850,7 @@ async function streamAssistant(convo){
     if(useVision){
       // ETAPA 1 — o modelo de VISÃO lê o print e descreve tudo (fatos)
       aiBubble.innerHTML='<span class="typing"><span></span><span></span><span></span></span> <span style="color:var(--muted);font-size:12px">👁️ lendo o print… (~20-30s, não feche)</span>';
-      const descRes=await fetch(ollamaBase()+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:visModel,stream:false,options:{temperature:0.2},messages:[{role:"system",content:"Você lê prints de redes sociais e descreve TUDO de forma factual para um analista de marketing. Liste: nome e @ do perfil; bio/descrição; números visíveis (seguidores, seguindo, nº de posts); os temas/assuntos das fotos da grade; estilo visual, cores e identidade; destaques; e qualquer texto legível. Se um número não estiver legível, escreva 'não legível'. NÃO invente nada. Português do Brasil."},{role:"user",content:"Descreva este print em detalhes.",images:lastUser.images}]}),signal:abortCtl.signal});
+      const descRes=await fetch(ollamaBase()+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:visModel,stream:false,options:{temperature:0.2},messages:[{role:"system",content:"Você lê prints de redes sociais E de ferramentas de análise (ex: Not Just Analytics) e extrai TUDO de forma factual para um analista de marketing. Liste TODOS os dados visíveis: nome e @ do perfil; bio; TODOS os números e métricas (seguidores, seguindo, nº de posts, TAXA DE ENGAJAMENTO, média de curtidas e de comentários, melhor post e suas métricas, hashtags mais usadas, crescimento de seguidores, datas); temas/assuntos dos posts; estilo visual e cores. Transcreva números e hashtags EXATAMENTE como aparecem. Se algo não estiver legível, escreva 'não legível'. NÃO invente nada. Português do Brasil."},{role:"user",content:"Extraia todos os dados deste print em detalhes.",images:lastUser.images}]}),signal:abortCtl.signal});
       if(!descRes.ok)throw new Error("HTTP "+descRes.status);
       const dj=await descRes.json();const desc=((dj.message&&dj.message.content)||"").trim();
       // ETAPA 2 — o modelo INTELIGENTE faz a auditoria estratégica com base na descrição + contexto
