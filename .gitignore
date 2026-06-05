@@ -7,6 +7,12 @@ users.json
 sessions.json
 cloudflared.exe
 data/
+_srv.out
+_srv.err
+_tunnel.out
+_tunnel.err
+_*.out
+_*.err
 backup-painel-ia.json
 *.log
 .DS_Store
