@@ -42,8 +42,10 @@ async function effConfig() {
     geminiKey: c.geminiKey || process.env.GEMINI_KEY || '',
     geminiModel: c.geminiModel || process.env.GEMINI_MODEL || 'gemini-2.5-flash',
     igKey: c.igApiKey || process.env.RAPIDAPI_KEY || '',
-    igHost: c.igApiHost || process.env.RAPIDAPI_HOST || 'instagram-scraper-api2.p.rapidapi.com',
-    igPath: c.igApiPath || process.env.RAPIDAPI_PATH || '/v1/info?username_or_id_or_url={handle}',
+    igHost: c.igApiHost || process.env.RAPIDAPI_HOST || 'instagram120.p.rapidapi.com',
+    igPath: c.igApiPath || process.env.RAPIDAPI_PATH || '/api/instagram/profile',
+    igMethod: c.igApiMethod || process.env.RAPIDAPI_METHOD || 'POST',
+    igBody: c.igApiBody || process.env.RAPIDAPI_BODY || '{"username":"{handle}"}',
     inviteCode: process.env.INVITE_CODE || c.inviteCode || 'CONVITE'
   };
 }
@@ -124,7 +126,7 @@ module.exports = async (req, res) => {
         if (!geminiOn(cfg)) return send(res, 400, { error: 'Ligue a IA na nuvem (Gemini) primeiro.' });
         if (!igOn(cfg)) return send(res, 400, { error: 'Conecte a API de dados do Instagram (cole sua chave do RapidAPI em ⚙️).' });
         const handle = core.cleanHandle(d.handle); if (!handle) return send(res, 400, { error: 'Digite um @ válido.' });
-        const r = await core.igFetchProfile({ key: cfg.igKey, host: cfg.igHost, path: cfg.igPath }, handle);
+        const r = await core.igFetchProfile({ key: cfg.igKey, host: cfg.igHost, path: cfg.igPath, method: cfg.igMethod, body: cfg.igBody }, handle);
         if (r.status === 401 || r.status === 403) return send(res, 502, { error: 'A API de dados recusou sua chave (HTTP ' + r.status + '). Confira/assine o plano grátis no RapidAPI.' });
         if (r.status === 429) return send(res, 502, { error: 'Você atingiu o limite grátis da API de dados. Aguarde renovar ou suba o plano.' });
         if (!r.json) return send(res, 502, { error: 'A API de dados não respondeu (HTTP ' + r.status + '). Tente de novo.' });

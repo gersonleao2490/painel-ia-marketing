@@ -182,11 +182,18 @@ function extractPosts(raw) {
   return arr.slice(0, 12).map(x => ({ likes: num(dig(x, ['like_count', 'likes', 'edge_liked_by'])), comments: num(dig(x, ['comment_count', 'comments', 'edge_media_to_comment'])) })).filter(p => p.likes != null);
 }
 function igGet(pathTpl, handle, cb) {
-  const host = cfg.igApiHost || 'instagram-scraper-api2.p.rapidapi.com';
+  // Padrão = Instagram120 (POST {"username":"..."} em /api/instagram/profile).
+  const host = cfg.igApiHost || 'instagram120.p.rapidapi.com';
+  const method = (cfg.igApiMethod || 'POST').toUpperCase();
   const p = String(pathTpl).replace('{handle}', encodeURIComponent(handle));
-  const r = https.request({ hostname: host, path: p, method: 'GET', headers: { 'x-rapidapi-key': cfg.igApiKey, 'x-rapidapi-host': host } },
+  const headers = { 'x-rapidapi-key': cfg.igApiKey, 'x-rapidapi-host': host };
+  let data = null;
+  if (method === 'POST') { data = String(cfg.igApiBody || '{"username":"{handle}"}').replace('{handle}', handle); headers['Content-Type'] = 'application/json'; headers['Content-Length'] = Buffer.byteLength(data); }
+  const r = https.request({ hostname: host, path: p, method, headers },
     gres => { let body = ''; gres.on('data', c => body += c); gres.on('end', () => { let j = null; try { j = JSON.parse(body); } catch (e) {} cb(gres.statusCode, j); }); });
-  r.on('error', () => cb(0, null)); r.end();
+  r.on('error', () => cb(0, null));
+  if (data) r.write(data);
+  r.end();
 }
 function profileAnalysis(reqBody, res) {
   let d; try { d = JSON.parse(reqBody || '{}'); } catch (e) { return json(res, 400, { error: 'dados inválidos' }); }
@@ -194,7 +201,7 @@ function profileAnalysis(reqBody, res) {
   if (!igConfigured()) return json(res, 400, { error: 'Conecte a API de dados do Instagram em ⚙️ (cole sua chave do RapidAPI). Veja o guia COMO-LIGAR-ANALISE-PERFIL.md.' });
   const handle = cleanHandle(d.handle);
   if (!handle) return json(res, 400, { error: 'Digite um @ válido.' });
-  igGet(cfg.igApiPath || '/v1/info?username_or_id_or_url={handle}', handle, (status, j) => {
+  igGet(cfg.igApiPath || '/api/instagram/profile', handle, (status, j) => {
     if (status === 401 || status === 403) return json(res, 502, { error: 'A API de dados recusou sua chave (HTTP ' + status + '). Confira/assine o plano grátis no RapidAPI e cole a chave de novo em ⚙️.' });
     if (status === 429) return json(res, 502, { error: 'Você atingiu o limite grátis da API de dados. Aguarde a renovação ou suba o plano no RapidAPI.' });
     if (!j) return json(res, 502, { error: 'A API de dados não respondeu (HTTP ' + status + '). Tente de novo em instantes.' });
