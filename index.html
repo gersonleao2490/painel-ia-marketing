@@ -319,7 +319,7 @@
       </div>
       <div class="foot">
         <span id="charCount">0 caracteres</span>
-        <span><b style="color:var(--good)">v6.7</b> • ☁️ Gemini • 🔍 Análise por @ • 📎/Ctrl+V</span>
+        <span><b style="color:var(--good)">v6.8</b> • ☁️ nuvem • 🔍 Análise por @ • status ✓</span>
       </div>
     </div>
   </main>
@@ -1115,7 +1115,7 @@ $("#toggleTheme").onclick=()=>{settings.theme=settings.theme==="dark"?"light":"d
 document.querySelectorAll(".modal-bg").forEach(mb=>mb.addEventListener("click",e=>{if(e.target===mb)mb.classList.remove("show")}));
 
 /* settings */
-$("#openSettings").onclick=()=>{$("#setUrl").value=settings.url;$("#setBrand").value=settings.brand||"";$("#setVision").value=settings.visionModel||"llava";$("#setNotion").value=settings.notionBridge||"http://localhost:3333";$("#setTemp").value=settings.temp;$("#tempVal").textContent=settings.temp;$("#logoutBtn").style.display=serverMode?"inline-flex":"none";populateModels();$("#settingsModal").classList.add("show")};
+$("#openSettings").onclick=()=>{$("#setUrl").value=settings.url;$("#setBrand").value=settings.brand||"";$("#setVision").value=settings.visionModel||"llava";$("#setNotion").value=settings.notionBridge||"http://localhost:3333";$("#setTemp").value=settings.temp;$("#tempVal").textContent=settings.temp;$("#logoutBtn").style.display=serverMode?"inline-flex":"none";populateModels();$("#settingsModal").classList.add("show");updateCloudStatus()};
 $("#setTemp").addEventListener("input",e=>$("#tempVal").textContent=e.target.value);
 $("#saveSettings").onclick=()=>{settings.url=$("#setUrl").value.trim()||"http://localhost:11434";settings.model=$("#setModel").value;settings.visionModel=$("#setVision").value.trim()||"llava";settings.temp=Number($("#setTemp").value);settings.brand=$("#setBrand").value.trim();settings.notionBridge=$("#setNotion").value.trim()||"http://localhost:3333";save(K.settings,settings);$("#brandName").textContent=settings.brand||"Diretora Sênior IA";$("#settingsModal").classList.remove("show");checkConnection()};
 $("#saveNotion").onclick=async()=>{
@@ -1169,6 +1169,15 @@ $("#offIg").onclick=async()=>{
   try{await fetch("/ig-config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:""})});}catch(e){}
   $("#igResult").style.color="var(--muted)";$("#igResult").textContent="API de dados desligada.";
 };
+/* mostra "Conectado" nas configs (lê o status real do servidor) */
+async function updateCloudStatus(){
+  if(!serverMode)return;
+  try{
+    const r=await fetch("/ig-status");if(!r.ok)return;const j=await r.json();
+    const g=$("#geminiResult");if(g){g.style.color=j.gemini?"var(--good)":"var(--muted)";g.textContent=j.gemini?"✓ IA na nuvem LIGADA":"";}
+    const i=$("#igResult");if(i){i.style.color=j.on?"var(--good)":"var(--muted)";i.textContent=j.on?"✓ API de dados CONECTADA":"";}
+  }catch(e){}
+}
 $("#openAnalise").onclick=()=>{$("#analiseModal").classList.add("show");setTimeout(()=>$("#igHandle").focus(),60)};
 $("#closeAnalise").onclick=()=>$("#analiseModal").classList.remove("show");
 async function runAnalise(){
