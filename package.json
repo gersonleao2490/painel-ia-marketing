@@ -1,0 +1,10 @@
+{
+  "name": "painel-ia-marketing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Painel IA de Marketing — versão na nuvem (Vercel + Neon + Gemini)",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.5"
+  }
+}
