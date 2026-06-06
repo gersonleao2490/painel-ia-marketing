@@ -23,7 +23,7 @@ const OLLAMA = { host: '127.0.0.1', port: 11434 };
 /* ---------- config ---------- */
 let cfg = { port: 8800, inviteCode: '' };
 try { cfg = Object.assign(cfg, JSON.parse(fs.readFileSync(CFG_PATH, 'utf8'))); } catch (e) {}
-if (!cfg.inviteCode) { cfg.inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase(); fs.writeFileSync(CFG_PATH, JSON.stringify(cfg, null, 2)); }
+if (!cfg.inviteCode) { cfg.inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase(); try { fs.writeFileSync(CFG_PATH, JSON.stringify(cfg, null, 2)); } catch (e) {} }
 
 /* ---------- usuários ---------- */
 function loadUsers() { try { const u = JSON.parse(fs.readFileSync(USERS_PATH, 'utf8')); return Array.isArray(u) ? u : [u]; } catch (e) { return []; } }

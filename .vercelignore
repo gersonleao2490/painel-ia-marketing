@@ -1,0 +1,9 @@
+# Arquivos que NÃO vão pra nuvem (são só do uso LOCAL no PC).
+# A nuvem usa api/index.js + lib/ + index.html + package.json + vercel.json.
+server.js
+notion-bridge.js
+*.bat
+*.vbs
+*.md
+.env.example
+data/
